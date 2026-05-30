@@ -134,7 +134,7 @@ function go(i){
 async function drawNotice(){
   const ct=document.getElementById('ct');
   ct.innerHTML=`<div style="text-align:center;padding:48px 0;color:#bbb;font-size:13px">불러오는 중...</div>`;
-  const NOTICES_URL='https://script.google.com/macros/s/AKfycbx0H3ufnEiEg05L_xWwp__VwmSm6fafA-OngyA-wn8veeKoezjfwQdKghljYUT0RF6aPg/exec';
+  const NOTICES_URL='https://script.google.com/macros/s/AKfycbw6WvCSPcbr2R7smU9GJy-_RDU30oxKuchl-sy_u9aN0qS9YZn8kuPYHji5yQNDtvV-/exec';
   try{
     const res=await fetch(NOTICES_URL);
     const notices=await res.json();
