@@ -134,8 +134,9 @@ function go(i){
 async function drawNotice(){
   const ct=document.getElementById('ct');
   ct.innerHTML=`<div style="text-align:center;padding:48px 0;color:#bbb;font-size:13px">불러오는 중...</div>`;
+  const NOTICES_URL='https://script.google.com/macros/s/AKfycbx0H3ufnEiEg05L_xWwp__VwmSm6fafA-OngyA-wn8veeKoezjfwQdKghljYUT0RF6aPg/exec';
   try{
-    const res=await fetch('/.netlify/functions/get-notices');
+    const res=await fetch(NOTICES_URL);
     const notices=await res.json();
     if(!Array.isArray(notices)) throw new Error();
     const bc=imp=>imp.includes('긴급')?'nb-r':imp.includes('일반')?'nb-b':'nb-g';
@@ -144,14 +145,14 @@ async function drawNotice(){
         <div class="ndot ${n.pinned?'':'g'}"></div>
         <div>
           <h4>${n.pinned?'📌 ':''}${n.title}<span class="nbadge ${bc(n.importance)}">${n.importance}</span></h4>
-          <p>${n.content}${n.date?' · '+n.date:''}</p>
+          <p>${n.content}${n.endDate?' · ~'+n.endDate:''}</p>
         </div>
       </div>`).join('');
     ct.innerHTML=`
       <div class="hero">
         <div class="hero-tag">📢 공지사항</div>
         <h2>지학원 공지사항</h2>
-        <div class="hdate">노션 실시간 연동 · 고정 공지 우선 표시</div>
+        <div class="hdate">구글 스프레드시트 실시간 연동</div>
       </div>
       ${items||'<p style="text-align:center;color:#bbb;font-size:13px;padding:24px">등록된 공지가 없습니다.</p>'}
       <div class="bottom-space"></div>`;
@@ -160,14 +161,11 @@ async function drawNotice(){
       <div class="hero">
         <div class="hero-tag">📢 공지사항</div>
         <h2>지학원 공지사항</h2>
-        <div class="hdate">노션 실시간 연동</div>
+        <div class="hdate">구글 스프레드시트 실시간 연동</div>
       </div>
       <div style="background:#fff8e6;border:0.5px solid #fde8a0;border-radius:12px;padding:12px 14px;font-size:12px;color:#8a6200;text-align:center;margin-bottom:10px">
-        Netlify 배포 후 노션 공지가 자동으로 표시돼요.
+        공지사항을 불러오지 못했어요. 잠시 후 다시 시도해주세요.
       </div>
-      <div class="nitem"><div class="ndot"></div><div><h4>6/3(수) 지방선거일<span class="nbadge nb-r">긴급</span></h4><p>6/2(화) 퇴소 16:00 · 6/3(수) 입소 19:00</p></div></div>
-      <div class="nitem"><div class="ndot"></div><div><h4>6/4(목) 모의고사<span class="nbadge nb-b">학사</span></h4><p>모의고사 당일 입소 16:30부터 가능</p></div></div>
-      <div class="nitem"><div class="ndot g"></div><div><h4>냉방 가동 안내<span class="nbadge nb-g">시설</span></h4><p>6/1(월)부터 취침 시 냉방 가동 예정</p></div></div>
       <div class="bottom-space"></div>`;
   }
 }
@@ -236,9 +234,23 @@ function pickDay(d){calD=d;drawCal();}
 function chgM(dir){calM+=dir;if(calM>12){calM=1;calY++;}if(calM<1){calM=12;calY--;}calD=1;drawCal();}
 
 // ── 외출 ──
+let outingType = '외출';
 function drawForm(){
   const today=new Date().toISOString().split('T')[0];
   document.getElementById('ct').innerHTML=`
+    <div class="card">
+      <div class="ctitle">외출/외박 구분</div>
+      <div style="display:flex;gap:8px;margin-bottom:4px">
+        <button id="btn-outing" onclick="setOutingType('외출')"
+          style="flex:1;padding:12px;border-radius:10px;border:1.5px solid #1b2a4a;background:#1b2a4a;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">
+          🚶 외출
+        </button>
+        <button id="btn-overnight" onclick="setOutingType('외박')"
+          style="flex:1;padding:12px;border-radius:10px;border:1.5px solid #ddd;background:#fff;color:#888;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">
+          🏠 외박
+        </button>
+      </div>
+    </div>
     <div class="card">
       <div class="ctitle">학생 정보</div>
       <div class="frow">
@@ -254,50 +266,63 @@ function drawForm(){
       </div>
     </div>
     <div class="card">
-      <div class="ctitle">외출 정보</div>
-      <div class="fl"><label>외출 날짜</label><input type="date" id="odate" value="${today}"></div>
-      <div class="frow">
-        <div class="fl"><label>외출 시간</label><input type="time" id="otime" value="16:00"></div>
-        <div class="fl"><label>귀사 시간</label><input type="time" id="itime" value="21:30"></div>
+      <div class="ctitle" id="outing-info-title">외출 정보</div>
+      <div class="fl"><label>날짜</label><input type="date" id="odate" value="${today}"></div>
+      <div id="time-section">
+        <div class="frow">
+          <div class="fl"><label>외출 시간</label><input type="time" id="otime" value="16:00" max="23:00"></div>
+          <div class="fl"><label>귀사 시간</label><input type="time" id="itime" value="21:30" max="23:00"></div>
+        </div>
+        <p style="font-size:10px;color:#bbb;margin-top:-6px;margin-bottom:8px">귀사 시간은 23:00까지</p>
       </div>
-      <div class="fl"><label>외출 사유</label><textarea id="oreason" placeholder="외출 사유를 입력하세요"></textarea></div>
+      <div class="fl"><label>사유</label><textarea id="oreason" placeholder="외출 사유를 입력하세요"></textarea></div>
     </div>
     <div style="background:#e8f8f0;border:0.5px solid #a8dfc0;border-radius:12px;padding:16px;text-align:center;display:none;margin-bottom:10px" id="outing-result">
       <div style="font-size:32px;margin-bottom:8px">✅</div>
-      <div style="font-size:14px;font-weight:500;color:#1a7a4a;margin-bottom:4px">외출 신청이 완료됐어요</div>
-      <div style="font-size:12px;color:#2a9a5a">선생님 노션에 전달되었습니다.</div>
+      <div style="font-size:14px;font-weight:500;color:#1a7a4a;margin-bottom:4px">신청이 완료됐어요</div>
+      <div style="font-size:12px;color:#2a9a5a">선생님께 전달되었습니다.</div>
     </div>
     <button class="sbtn" id="o-submit" onclick="submitOuting()">신청서 제출</button>
     <div class="bottom-space"></div>`;
   document.getElementById('sname').addEventListener('input',function(){lookup(this.value);});
+}
+function setOutingType(type){
+  outingType=type;
+  const isOuting=type==='외출';
+  document.getElementById('btn-outing').style.cssText=`flex:1;padding:12px;border-radius:10px;border:1.5px solid ${isOuting?'#1b2a4a':'#ddd'};background:${isOuting?'#1b2a4a':'#fff'};color:${isOuting?'#fff':'#888'};font-size:13px;font-weight:${isOuting?'600':'500'};cursor:pointer;font-family:inherit`;
+  document.getElementById('btn-overnight').style.cssText=`flex:1;padding:12px;border-radius:10px;border:1.5px solid ${!isOuting?'#1b2a4a':'#ddd'};background:${!isOuting?'#1b2a4a':'#fff'};color:${!isOuting?'#fff':'#888'};font-size:13px;font-weight:${!isOuting?'600':'500'};cursor:pointer;font-family:inherit`;
+  document.getElementById('time-section').style.display=isOuting?'block':'none';
+  document.getElementById('outing-info-title').textContent=isOuting?'외출 정보':'외박 정보';
+  document.getElementById('oreason').placeholder=isOuting?'외출 사유를 입력하세요':'외박 사유를 입력하세요';
 }
 async function submitOuting(){
   const name=document.getElementById('sname')?.value.trim();
   const grade=document.getElementById('sgrade')?.value;
   const guardian=document.getElementById('gtel')?.value.trim();
   const date=document.getElementById('odate')?.value;
-  const outTime=document.getElementById('otime')?.value;
-  const inTime=document.getElementById('itime')?.value;
+  const outTime=outingType==='외출'?document.getElementById('otime')?.value:'';
+  const inTime=outingType==='외출'?document.getElementById('itime')?.value:'';
   const reason=document.getElementById('oreason')?.value.trim();
-  if(!name||!date||!outTime||!inTime||!reason){alert('이름, 날짜, 시간, 사유는 필수입니다.');return;}
+  if(!name||!date||!reason){alert('이름, 날짜, 사유는 필수입니다.');return;}
+  if(outingType==='외출'&&(!outTime||!inTime)){alert('외출/귀사 시간을 입력해주세요.');return;}
+  if(outingType==='외출'&&inTime>'23:00'){alert('귀사 시간은 23:00까지입니다.');return;}
   const btn=document.getElementById('o-submit');
   btn.disabled=true;btn.textContent='제출 중...';
   const now=new Date();
   const datetime=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const OUTING_URL='https://script.google.com/macros/s/AKfycbw0pQTEt1wAxnDScm_muKQ3TDQoThxMQhlJw3lLBfLBy-dks1Roddk_pp8bHSWOeLQN/exec';
   try{
-    const res=await fetch('/.netlify/functions/submit-outing',{
+    await fetch(OUTING_URL,{
       method:'POST',
+      mode:'no-cors',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name,grade,guardian:guardian||'미입력',date,outTime,inTime,reason,datetime})
+      body:JSON.stringify({name,grade,guardian:guardian||'미입력',type:outingType,date,outTime,inTime,reason,datetime})
     });
-    const data=await res.json();
-    if(data.success){
-      document.getElementById('outing-result').style.display='block';
-      btn.style.display='none';
-    } else { throw new Error(); }
+    document.getElementById('outing-result').style.display='block';
+    btn.style.display='none';
   }catch(e){
     btn.disabled=false;btn.textContent='신청서 제출';
-    alert('제출 중 오류가 발생했습니다. 다시 시도해 주세요.');
+    alert('제출 중 오류가 발생했습니다.');
   }
 }
 async function lookup(name){
@@ -419,17 +444,14 @@ async function submitComplaint(){
   btn.disabled=true;btn.textContent='제출 중...';
   const now=new Date();
   const dateStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const COMPLAINT_URL='https://script.google.com/macros/s/AKfycbzohqbGwVxjkU6HwlleShOHbBstkfJ0db7-LQJQz72i3lLzHyGLevGCZvJuvjeZp2zBaw/exec';
   try{
-    const res=await fetch('/.netlify/functions/submit-complaint',{
+    await fetch(COMPLAINT_URL,{
       method:'POST',
+      mode:'no-cors',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({hakbun,name,category:selCat,content,datetime:dateStr})
     });
-    const data=await res.json();
-    if(data.success){
-      document.getElementById('submit-result').style.display='block';
-      btn.style.display='none';
-    } else { throw new Error(); }
   }catch(e){
     btn.disabled=false;btn.textContent='민원 제출하기';
     alert('제출 중 오류가 발생했습니다. 다시 시도해 주세요.');
