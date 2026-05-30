@@ -8,7 +8,8 @@ exports.handler = async () => {
       headers: {
         'Authorization': `Bearer ${NOTION_TOKEN}`,
         'Content-Type': 'application/json',
-        'Notion-Version': '2022-06-28'
+        'Notion-Version': '2022-06-28',
+        'notion-version': '2022-06-28'
       },
       body: JSON.stringify({
         sorts: [
@@ -18,8 +19,14 @@ exports.handler = async () => {
       })
     });
 
-    if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
+
+    if (!res.ok) {
+      return {
+        statusCode: res.status,
+        body: JSON.stringify({ error: data })
+      };
+    }
 
     const notices = data.results.map(page => ({
       id: page.id,
