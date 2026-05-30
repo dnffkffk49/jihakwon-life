@@ -260,9 +260,8 @@ function drawForm(){
         </div>
       </div>
       <div class="fl">
-        <label>보호자 연락처<span class="apill">자동조회</span></label>
-        <input type="tel" id="gtel" placeholder="이름 입력 시 자동 조회" style="color:#999">
-        <div class="gresult" id="gres"></div>
+        <label>보호자 연락처</label>
+        <input type="tel" id="gtel" placeholder="010-0000-0000">
       </div>
     </div>
     <div class="card">
@@ -284,7 +283,7 @@ function drawForm(){
     </div>
     <button class="sbtn" id="o-submit" onclick="submitOuting()">신청서 제출</button>
     <div class="bottom-space"></div>`;
-  document.getElementById('sname').addEventListener('input',function(){lookup(this.value);});
+  document.getElementById('sname').addEventListener('input',function(){});
 }
 function setOutingType(type){
   outingType=type;
