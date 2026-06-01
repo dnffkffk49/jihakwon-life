@@ -126,7 +126,7 @@ function go(i){
   curTab=i;
   for(let j=0;j<6;j++) document.getElementById('tb'+j).classList.toggle('active',j===i);
   document.getElementById('ct').innerHTML='';
-  [drawNotice,drawCal,drawForm,drawYeolpumta,drawContact,drawComplaint][i]();
+  [drawNotice,async()=>drawCal(),drawForm,drawYeolpumta,drawContact,drawComplaint][i]();
   window.scrollTo(0,0);
 }
 
