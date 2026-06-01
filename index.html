@@ -119,7 +119,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div class="content" id="ct"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyaT_tFJGMni-qHplgWbH0ie1Ms2s1TCc4Fk4uuMWWZrBgy-4K4cVkPti_L-Sc8sgoDyg/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz_a9EHm21_woqtfdgZWvh8rhYD-BB5R26ND5W1zad-8UruwdhlnLIYlBcuUndeZ_JDjA/exec';
 let studentDB=null, lookupTimer=null, selCat='';
 
 function go(i){
@@ -151,7 +151,7 @@ async function drawNotice(){
       <div class="hero">
         <div class="hero-tag">📢 공지사항</div>
         <h2>지학원 공지사항</h2>
-        <div class="hdate">서로 배려하며 규칙을 잘 지켜요!</div>
+        <div class="hdate">규칙을 잘 지키며 서로 배려하는 학사생</div>
       </div>
       ${items||'<p style="text-align:center;color:#bbb;font-size:13px;padding:24px">등록된 공지가 없습니다.</p>'}
       <div class="bottom-space"></div>`;
@@ -160,7 +160,7 @@ async function drawNotice(){
       <div class="hero">
         <div class="hero-tag">📢 공지사항</div>
         <h2>지학원 공지사항</h2>
-        <div class="hdate">서로 배려하며 규칙을 잘 지켜요!</div>
+        <div class="hdate">규칙을 잘 지키며 서로 배려하는 학사생</div>
       </div>
       <div style="background:#fff8e6;border:0.5px solid #fde8a0;border-radius:12px;padding:12px 14px;font-size:12px;color:#8a6200;text-align:center;margin-bottom:10px">
         공지사항을 불러오지 못했어요. 잠시 후 다시 시도해주세요.
@@ -369,7 +369,7 @@ function drawYeolpumta(){
   document.getElementById('ct').innerHTML=`
     <div style="background:#1b2a4a;border-radius:14px;padding:16px;margin-bottom:14px;color:#fff">
       <div style="font-size:16px;font-weight:600;margin-bottom:5px">🔥 열품타 공부방</div>
-      <div style="font-size:11px;opacity:0.7;line-height:1.7">학년별 방에 입장해 함께 공부해요!<br>순공시간을 늘려 우수학사생에 선발되어 보아요~</div>
+      <div style="font-size:11px;opacity:0.7;line-height:1.7">학년별 방에 입장해서 함께 공부해요!<br>순공시간 체크하고 우수학사생으로 선발:)</div>
     </div>
     ${cards}
     <div style="background:#f9f9f9;border-radius:12px;padding:12px 14px;font-size:11px;color:#aaa;line-height:1.7;border:0.5px solid #ebebeb">
@@ -383,12 +383,12 @@ function drawContact(){
   document.getElementById('ct').innerHTML=`
     <div class="ccard">
       <div class="crow"><div class="cico ci-g"><i class="ti ti-user-circle" aria-hidden="true"></i></div><div style="flex:1"><div class="cn2">학사담당교사</div><div class="cr2">010-4985-2464</div></div><a href="tel:010-4985-2464" class="cbtn"><i class="ti ti-phone" style="font-size:13px" aria-hidden="true"></i> 전화</a></div>
-      <div class="crow"><div class="cico ci-b"><i class="ti ti-building" aria-hidden="true"></i></div><div style="flex:1"><div class="cn2">학사 사무실</div><div class="cr2">평일 18:30 – 24:00 · 043-251-5878</div></div><a href="tel:043-251-5878" class="cbtn"><i class="ti ti-phone" style="font-size:13px" aria-hidden="true"></i> 전화</a></div>
+      <div class="crow"><div class="cico ci-b"><i class="ti ti-building" aria-hidden="true"></i></div><div style="flex:1"><div class="cn2">학사 사무실</div><div class="cr2">평일 18:30 – 24:00</div></div><a href="tel:043-251-5878" class="cbtn"><i class="ti ti-phone" style="font-size:13px" aria-hidden="true"></i> 전화</a></div>
       <div class="crow"><div class="cico ci-a"><i class="ti ti-school" aria-hidden="true"></i></div><div style="flex:1"><div class="cn2">산남고등학교</div><div class="cr2">교무실 메인</div></div><a href="tel:043-000-0000" class="cbtn"><i class="ti ti-phone" style="font-size:13px" aria-hidden="true"></i> 전화</a></div>
       <div class="crow"><div class="cico ci-r"><i class="ti ti-ambulance" aria-hidden="true"></i></div><div style="flex:1"><div class="cn2">긴급 연락처</div><div class="cr2">24시간</div></div><a href="tel:010-0000-0002" class="cbtn"><i class="ti ti-phone" style="font-size:13px" aria-hidden="true"></i> 전화</a></div>
     </div>
     <div style="background:#f9f9f9;border-radius:12px;padding:12px 14px;font-size:12px;color:#999;line-height:1.7;border:0.5px solid #ebebeb">
-      정해진 귀사시간 이전에 반드시 복귀해요.
+      정해진 시간 안에 꼭 귀사해요~!! 
     </div>
     <div class="bottom-space"></div>`;
 }
