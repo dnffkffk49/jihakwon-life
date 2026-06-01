@@ -119,7 +119,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div class="content" id="ct"></div>
 
 <script>
-let curTab=0, calY=2026, calM=6, calD=3;
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyaT_tFJGMni-qHplgWbH0ie1Ms2s1TCc4Fk4uuMWWZrBgy-4K4cVkPti_L-Sc8sgoDyg/exec';
 let studentDB=null, lookupTimer=null, selCat='';
 
 function go(i){
@@ -134,9 +134,8 @@ function go(i){
 async function drawNotice(){
   const ct=document.getElementById('ct');
   ct.innerHTML=`<div style="text-align:center;padding:48px 0;color:#bbb;font-size:13px">불러오는 중...</div>`;
-  const NOTICES_URL='https://script.google.com/macros/s/AKfycbw6WvCSPcbr2R7smU9GJy-_RDU30oxKuchl-sy_u9aN0qS9YZn8kuPYHji5yQNDtvV-/exec';
   try{
-    const res=await fetch(NOTICES_URL);
+    const res=await fetch(SCRIPT_URL+'?type=notices');
     const notices=await res.json();
     if(!Array.isArray(notices)) throw new Error();
     const bc=imp=>imp.includes('긴급')?'nb-r':imp.includes('일반')?'nb-b':'nb-g';
