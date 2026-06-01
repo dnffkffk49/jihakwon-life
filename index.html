@@ -43,17 +43,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .sbtn{width:100%;padding:12px;background:#1b2a4a;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px}
 .sbtn:disabled{background:#aaa;cursor:not-allowed}
-.chdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.chdr h2{font-size:14px;font-weight:600;color:#1a1a2e}
-.cnbtn{background:#fff;border:0.5px solid #ddd;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;color:#555}
-.cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:12px}
+.chdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.chdr h2{font-size:15px;font-weight:700;color:#1a1a2e}
+.cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:8px}
 .cdl{text-align:center;font-size:10px;color:#bbb;padding:3px 0}
 .cdl.s{color:#e74c3c}.cdl.sa{color:#3498db}
-.cc{text-align:center;font-size:11px;border-radius:8px;color:#1a1a2e;min-height:32px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:6px;gap:2px}
-.cc.tod{background:#e8ecf5;color:#1b2a4a;font-weight:600}
+.cc{text-align:center;font-size:12px;border-radius:8px;color:#1a1a2e;min-height:34px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:5px;gap:1px}
+.cc.tod{background:#1b2a4a;color:#fff;font-weight:700}
 .cc.hol{color:#e74c3c}
 .cc.sat{color:#3498db}
 .cc.emp{opacity:0;pointer-events:none}
+.ev-dot{width:5px;height:5px;border-radius:50%;background:#e74c3c;flex-shrink:0}
+.ev-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid #f5f5f5}
+.ev-item:last-child{border-bottom:none}
+.ev-tag{font-size:10px;padding:3px 8px;border-radius:999px;font-weight:500;flex-shrink:0;white-space:nowrap}
+.et-시험{background:#ffebeb;color:#c0392b}
+.et-방학{background:#e8f8f0;color:#1a7a4a}
+.et-행사{background:#fff5e6;color:#d35400}
+.et-학사{background:#e8f0fe;color:#1a56db}
+.et-기타{background:#f0f0f0;color:#666}
 .ccard{background:#fff;border-radius:14px;border:0.5px solid #ebebeb;overflow:hidden;margin-bottom:10px}
 .crow{display:flex;align-items:center;padding:13px 15px;gap:12px;border-bottom:0.5px solid #f5f5f5}
 .crow:last-child{border-bottom:none}
@@ -94,113 +102,155 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz_a9EHm21_woqtfdgZWvh8rhYD-BB5R26ND5W1zad-8UruwdhlnLIYlBcuUndeZ_JDjA/exec';
-const OUTING_URL = 'https://script.google.com/macros/s/AKfycbw0pQTEt1wAxnDScm_muKQ3TDQoThxMQhlJw3lLBfLBy-dks1Roddk_pp8bHSWOeLQN/exec';
-const COMPLAINT_URL = 'https://script.google.com/macros/s/AKfycbzohqbGwVxjkU6HwlleShOHbBstkfJ0db7-LQJQz72i3lLzHyGLevGCZvJuvjeZp2zBaw/exec';
 
-let curTab=0, selCat='';
+let curTab = 0, selCat = '', outingType = '외출';
 
-function go(i){
-  curTab=i;
-  for(let j=0;j<6;j++) document.getElementById('tb'+j).classList.toggle('active',j===i);
-  document.getElementById('ct').innerHTML='';
-  [drawNotice,drawCal,drawForm,drawYeolpumta,drawContact,drawComplaint][i]();
-  window.scrollTo(0,0);
+function go(i) {
+  curTab = i;
+  for (let j = 0; j < 6; j++) document.getElementById('tb'+j).classList.toggle('active', j===i);
+  document.getElementById('ct').innerHTML = '';
+  [drawNotice, drawCal, drawForm, drawYeolpumta, drawContact, drawComplaint][i]();
+  window.scrollTo(0, 0);
 }
 
-// — 공지 —
-async function drawNotice(){
-  const ct=document.getElementById('ct');
-  ct.innerHTML=`<div style="text-align:center;padding:48px 0;color:#bbb;font-size:13px">불러오는 중...</div>`;
-  try{
-    const res=await fetch(SCRIPT_URL+'?type=notices');
-    const notices=await res.json();
-    if(!Array.isArray(notices)) throw new Error();
-    function bc(imp){return imp==='🔴 중요'?'nb-r':imp==='🔵 안내'?'nb-b':'nb-g'}
-    const endDate = n => n.endDate ? ` · ~${n.endDate}` : '';
-    const items=notices.map(n=>`
+// ── 공지 ──
+async function drawNotice() {
+  const ct = document.getElementById('ct');
+  ct.innerHTML = '<div style="text-align:center;padding:48px 0;color:#bbb;font-size:13px">불러오는 중...</div>';
+  try {
+    const res = await fetch(SCRIPT_URL + '?type=notices');
+    const notices = await res.json();
+    if (!Array.isArray(notices)) throw new Error();
+    function bc(imp){ return imp==='🔴 중요'?'nb-r':imp==='🔵 안내'?'nb-b':'nb-g'; }
+    const items = notices.map(n => `
       <div class="nitem">
         <div class="ndot ${n.pinned?'':'g'}"></div>
         <div>
           <h4>${n.pinned?'📌 ':''}${n.title}<span class="nbadge ${bc(n.importance)}">${n.importance}</span></h4>
-          <p>${n.content}${endDate(n)}</p>
+          <p>${n.content}${n.endDate?' · ~'+n.endDate:''}</p>
         </div>
       </div>`).join('');
-    ct.innerHTML=`
+    ct.innerHTML = `
       <div class="hero">
         <div class="hero-tag">📢 공지사항</div>
         <h2>지학원 공지사항</h2>
         <div class="hdate">규칙을 잘 지키며 서로 배려하는 학사생</div>
       </div>
-      ${items||`<p style="text-align:center;color:#bbb;font-size:13px;padding:24px">등록된 공지가 없습니다.</p>`}
+      ${items || '<p style="text-align:center;color:#bbb;font-size:13px;padding:24px">등록된 공지가 없습니다.</p>'}
       <div class="bottom-space"></div>`;
-  }catch(e){
-    ct.innerHTML=`
-      <div class="hero">
-        <div class="hero-tag">📢 공지사항</div>
-        <h2>지학원 공지사항</h2>
-        <div class="hdate">구글 스프레드시트 실시간 연동</div>
-      </div>
+  } catch(e) {
+    ct.innerHTML = `
+      <div class="hero"><div class="hero-tag">📢 공지사항</div><h2>지학원 공지사항</h2></div>
       <div style="background:#fff8e6;border:0.5px solid #fde8a0;border-radius:12px;padding:12px 14px;font-size:12px;color:#8a6200;text-align:center;margin-bottom:10px">
         공지사항을 불러오지 못했어요. 잠시 후 다시 시도해주세요.
-      </div>
-      <div class="bottom-space"></div>`;
+      </div><div class="bottom-space"></div>`;
   }
 }
 
-// — 일정 (6/7/8월 달력) —
-const HOLIDAYS={'2026-6-6':'현충일','2026-8-15':'광복절'};
-const SAT_HOL={};
-function drawCal(){
-  const today=new Date();
-  const months=[6,7,8];
-  const ct=document.getElementById('ct');
-  let html=`<div class="hero"><div class="hero-tag">📅 학사 일정</div><h2>2026년 여름방학 일정</h2><div class="hdate">6월 · 7월 · 8월 달력</div></div>`;
-  months.forEach(m=>{
-    const year=2026;
-    const firstDay=new Date(year,m-1,1).getDay();
-    const lastDate=new Date(year,m,0).getDate();
-    const days=['일','월','화','수','목','금','토'];
-    let cells='';
-    for(let i=0;i<firstDay;i++) cells+=`<div class="cc emp"></div>`;
-    for(let d=1;d<=lastDate;d++){
-      const dow=new Date(year,m-1,d).getDay();
-      const key=`${year}-${m}-${d}`;
-      const isToday=today.getFullYear()===year&&today.getMonth()===m-1&&today.getDate()===d;
-      let cls='cc';
-      if(isToday) cls+=' tod';
-      else if(HOLIDAYS[key]||dow===0) cls+=' hol';
-      else if(dow===6||SAT_HOL[key]) cls+=' sat';
-      cells+=`<div class="${cls}">${d}${HOLIDAYS[key]?`<div style="font-size:8px;color:inherit;opacity:0.7">${HOLIDAYS[key].substring(0,2)}</div>`:''}
-      </div>`;
-    }
-    html+=`<div class="card">
-      <div class="chdr"><h2>${m}월</h2></div>
-      <div class="cgrid">
-        ${days.map((d,i)=>`<div class="cdl ${i===0?'s':i===6?'sa':''}">${d}</div>`).join('')}
-        ${cells}
-      </div>
-    </div>`;
-  });
-  html+=`<div class="bottom-space"></div>`;
-  ct.innerHTML=html;
+// ── 일정 (구글 시트 연동 달력) ──
+const HOLIDAYS = {'2026-06-06':'현충일','2026-08-15':'광복절'};
+let calEvents = null;
+
+async function drawCal() {
+  const ct = document.getElementById('ct');
+  ct.innerHTML = '<div style="text-align:center;padding:48px 0;color:#bbb;font-size:13px">일정을 불러오는 중...</div>';
+  if (!calEvents) {
+    try {
+      const res = await fetch(SCRIPT_URL + '?type=schedule');
+      calEvents = await res.json();
+      if (!Array.isArray(calEvents)) calEvents = [];
+    } catch(e) { calEvents = []; }
+  }
+  renderCal(ct);
 }
 
-// — 외출 —
-let outingType='외출';
-function drawForm(){
-  const today=new Date().toISOString().split('T')[0];
-  document.getElementById('ct').innerHTML=`
+function renderCal(ct) {
+  const today = new Date();
+  const months = [6, 7, 8];
+  const DAY_NAMES = ['일','월','화','수','목','금','토'];
+  const TYPE_COLORS = {
+    '시험':'et-시험','방학':'et-방학','행사':'et-행사','학사':'et-학사','기타':'et-기타'
+  };
+
+  // 이벤트를 날짜별로 인덱싱
+  const evMap = {};
+  (calEvents || []).forEach(ev => {
+    if (!ev.date) return;
+    const key = ev.date.substring(0, 10);
+    if (!evMap[key]) evMap[key] = [];
+    evMap[key].push(ev);
+  });
+
+  let html = `<div class="hero">
+    <div class="hero-tag">📅 학사 일정</div>
+    <h2>2026년 여름 일정</h2>
+    <div class="hdate">구글 시트에 입력하면 바로 반영돼요</div>
+  </div>`;
+
+  months.forEach(m => {
+    const year = 2026;
+    const firstDay = new Date(year, m-1, 1).getDay();
+    const lastDate = new Date(year, m, 0).getDate();
+
+    let cells = '';
+    for (let i = 0; i < firstDay; i++) cells += '<div class="cc emp"></div>';
+    for (let d = 1; d <= lastDate; d++) {
+      const dow = new Date(year, m-1, d).getDay();
+      const dateKey = `${year}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const isToday = today.getFullYear()===year && today.getMonth()===m-1 && today.getDate()===d;
+      const isHol = !!HOLIDAYS[dateKey] || dow===0;
+      const isSat = dow===6;
+      let cls = 'cc';
+      if (isToday) cls += ' tod';
+      else if (isHol) cls += ' hol';
+      else if (isSat) cls += ' sat';
+      const hasEv = evMap[dateKey] && evMap[dateKey].length > 0;
+      cells += `<div class="${cls}">${d}${hasEv?'<div class="ev-dot"></div>':''}</div>`;
+    }
+
+    // 이번 달 이벤트 목록
+    const monthEvs = (calEvents||[]).filter(ev => {
+      if (!ev.date) return false;
+      const d = new Date(ev.date);
+      return d.getFullYear()===year && d.getMonth()===m-1;
+    }).sort((a,b) => a.date.localeCompare(b.date));
+
+    const evRows = monthEvs.map(ev => {
+      const d = new Date(ev.date);
+      const dayStr = `${m}/${d.getDate()}`;
+      const tCls = TYPE_COLORS[ev.type] || 'et-기타';
+      return `<div class="ev-item">
+        <span class="ev-tag ${tCls}">${ev.type||'기타'}</span>
+        <span style="font-size:12px;color:#1a1a2e;flex:1">${ev.title}</span>
+        <span style="font-size:11px;color:#bbb;flex-shrink:0">${dayStr}${ev.time?' '+ev.time:''}</span>
+      </div>`;
+    }).join('');
+
+    html += `<div class="card" style="margin-bottom:10px">
+      <div class="chdr"><h2>${m}월</h2></div>
+      <div class="cgrid">
+        ${DAY_NAMES.map((d,i)=>`<div class="cdl ${i===0?'s':i===6?'sa':''}">${d}</div>`).join('')}
+        ${cells}
+      </div>
+      ${monthEvs.length>0?`<div style="border-top:0.5px solid #f0f0f0;padding-top:8px;margin-top:4px">${evRows}</div>`:''}
+    </div>`;
+  });
+
+  html += '<div class="bottom-space"></div>';
+  ct.innerHTML = html;
+}
+
+// ── 외출 ──
+function drawForm() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('ct').innerHTML = `
     <div class="card">
       <div class="ctitle">외출/외박 구분</div>
       <div style="display:flex;gap:8px;margin-bottom:4px">
         <button id="btn-outing" onclick="setOutingType('외출')"
-          style="flex:1;padding:12px;border-radius:10px;border:1.5px solid #1b2a4a;background:#1b2a4a;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">
-          🚶 외출
-        </button>
+          style="flex:1;padding:12px;border-radius:10px;border:1.5px solid #1b2a4a;background:#1b2a4a;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🚶 외출</button>
         <button id="btn-overnight" onclick="setOutingType('외박')"
-          style="flex:1;padding:12px;border-radius:10px;border:1.5px solid #ddd;background:#fff;color:#888;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">
-          🏠 외박
-        </button>
+          style="flex:1;padding:12px;border-radius:10px;border:1.5px solid #ddd;background:#fff;color:#888;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">🏠 외박</button>
       </div>
     </div>
     <div class="card">
@@ -220,8 +270,8 @@ function drawForm(){
       <div class="ctitle" id="outing-info-title">외출 정보</div>
       <div class="fl"><label>날짜</label><input type="date" id="odate" value="${today}"></div>
       <div class="frow">
-        <div class="fl"><label>외출 시간</label><input type="time" id="otime" placeholder="13:00"></div>
-        <div class="fl"><label>귀사 시간</label><input type="time" id="itime" placeholder="21:00"></div>
+        <div class="fl"><label>외출 시간</label><input type="time" id="otime"></div>
+        <div class="fl"><label>귀사 시간</label><input type="time" id="itime"></div>
       </div>
     </div>
     <div class="card">
@@ -236,54 +286,56 @@ function drawForm(){
     <div class="bottom-space"></div>`;
 }
 
-function setOutingType(type){
-  outingType=type;
-  const isOuting=type==='외출';
-  document.getElementById('btn-outing').style.cssText=`flex:1;padding:12px;border-radius:10px;border:1.5px solid ${isOuting?'#1b2a4a':'#ddd'};background:${isOuting?'#1b2a4a':'#fff'};color:${isOuting?'#fff':'#888'};font-size:13px;font-weight:${isOuting?600:500};cursor:pointer;font-family:inherit`;
-  document.getElementById('btn-overnight').style.cssText=`flex:1;padding:12px;border-radius:10px;border:1.5px solid ${!isOuting?'#1b2a4a':'#ddd'};background:${!isOuting?'#1b2a4a':'#fff'};color:${!isOuting?'#fff':'#888'};font-size:13px;font-weight:${!isOuting?600:500};cursor:pointer;font-family:inherit`;
-  document.getElementById('time-section').style.display=isOuting?'block':'none';
-  document.getElementById('outing-info-title').textContent=isOuting?'외출 정보':'외박 정보';
-  document.getElementById('oreason').placeholder=isOuting?'외출 사유를 입력하세요':'외박 사유를 입력하세요';
+function setOutingType(type) {
+  outingType = type;
+  const isOuting = type === '외출';
+  const on = 'flex:1;padding:12px;border-radius:10px;border:1.5px solid #1b2a4a;background:#1b2a4a;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit';
+  const off = 'flex:1;padding:12px;border-radius:10px;border:1.5px solid #ddd;background:#fff;color:#888;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit';
+  document.getElementById('btn-outing').style.cssText = isOuting ? on : off;
+  document.getElementById('btn-overnight').style.cssText = isOuting ? off : on;
+  document.getElementById('time-section').style.display = isOuting ? 'block' : 'none';
+  document.getElementById('outing-info-title').textContent = isOuting ? '외출 정보' : '외박 정보';
+  document.getElementById('oreason').placeholder = isOuting ? '외출 사유를 입력하세요' : '외박 사유를 입력하세요';
 }
 
-async function submitOuting(){
-  const name=document.getElementById('sname')?.value.trim();
-  const grade=document.getElementById('sgrade')?.value;
-  const guardian=document.getElementById('gtel')?.value.trim();
-  const date=document.getElementById('odate')?.value;
-  const outTime=outingType==='외출'?document.getElementById('otime')?.value:'';
-  const inTime=outingType==='외출'?document.getElementById('itime')?.value:'';
-  const reason=document.getElementById('oreason')?.value.trim();
-  if(!name||!date||!reason){alert('이름, 날짜, 사유는 필수입니다.');return;}
-  if(outingType==='외출'&&(!outTime||!inTime)){alert('외출/귀사 시간을 입력해주세요.');return;}
-  if(outingType==='외출'&&inTime>'23:00'){alert('귀사 시간은 23:00까지입니다.');return;}
-  const btn=document.getElementById('o-submit');
-  btn.disabled=true;btn.textContent='제출 중...';
-  const now=new Date();
-  const datetime=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  try{
-    const res=await fetch(OUTING_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name,grade,guardian:guardian||'미입력',type:outingType,date,outTime,inTime,reason,datetime})
+async function submitOuting() {
+  const name = document.getElementById('sname')?.value.trim();
+  const grade = document.getElementById('sgrade')?.value;
+  const guardian = document.getElementById('gtel')?.value.trim();
+  const date = document.getElementById('odate')?.value;
+  const outTime = outingType==='외출' ? document.getElementById('otime')?.value : '';
+  const inTime = outingType==='외출' ? document.getElementById('itime')?.value : '';
+  const reason = document.getElementById('oreason')?.value.trim();
+  if (!name||!date||!reason) { alert('이름, 날짜, 사유는 필수입니다.'); return; }
+  if (outingType==='외출'&&(!outTime||!inTime)) { alert('외출/귀사 시간을 입력해주세요.'); return; }
+  if (outingType==='외출'&&inTime>'23:00') { alert('귀사 시간은 23:00까지입니다.'); return; }
+  const btn = document.getElementById('o-submit');
+  btn.disabled = true; btn.textContent = '제출 중...';
+  const now = new Date();
+  const datetime = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({type:'outing', name, grade, guardian:guardian||'미입력', outingType, date, outTime, inTime, reason, datetime})
     });
-    if(!res.ok) throw new Error('서버 오류: '+res.status);
-    document.getElementById('outing-result').style.display='block';
-    btn.style.display='none';
-  }catch(e){
-    btn.disabled=false;btn.textContent='신청서 제출';
+    if (!res.ok) throw new Error('서버 오류: '+res.status);
+    document.getElementById('outing-result').style.display = 'block';
+    btn.style.display = 'none';
+  } catch(e) {
+    btn.disabled = false; btn.textContent = '신청서 제출';
     alert('제출 중 오류가 발생했습니다. 다시 시도해 주세요.');
   }
 }
 
-// — 열품타 —
-const YEOLPUMTA=[
+// ── 열품타 ──
+const YEOLPUMTA = [
   {grade:'1학년',emoji:'🌱',color:'#2ecc71',light:'#e8f8f0',link:'https://link.yeolpumta.com/P3R5cGU9Z3JvdXBJbnZpdGUmaWQ9NjQxMDQxNA=='},
   {grade:'2학년',emoji:'🌿',color:'#3498db',light:'#e6f1fb',link:'https://link.yeolpumta.com/P3R5cGU9Z3JvdXBJbnZpdGUmaWQ9NjQxMDQzMw=='},
   {grade:'3학년',emoji:'💎',color:'#9b59b6',light:'#f0e8fb',link:'https://link.yeolpumta.com/P3R5cGU9Z3JvdXBJbnZpdGUmaWQ9NjQxMDQzOQ=='}
 ];
-function drawYeolpumta(){
-  const cards=YEOLPUMTA.map(r=>`
+function drawYeolpumta() {
+  const cards = YEOLPUMTA.map(r => `
     <a href="${r.link}" target="_blank" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;border:0.5px solid #ebebeb;padding:18px 16px;margin-bottom:8px;text-decoration:none">
       <div style="width:50px;height:50px;border-radius:50%;background:${r.light};display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">${r.emoji}</div>
       <div style="flex:1">
@@ -292,7 +344,7 @@ function drawYeolpumta(){
       </div>
       <div style="background:${r.color};color:#fff;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:500;flex-shrink:0">입장</div>
     </a>`).join('');
-  document.getElementById('ct').innerHTML=`
+  document.getElementById('ct').innerHTML = `
     <div style="background:#1b2a4a;border-radius:14px;padding:16px;margin-bottom:14px;color:#fff">
       <div style="font-size:16px;font-weight:600;margin-bottom:5px">🔥 열품타 공부방</div>
       <div style="font-size:11px;opacity:0.7;line-height:1.7">지학원 학사생 전용 공부방이에요.<br>학년별 방에 입장해서 함께 공부해요!</div>
@@ -304,9 +356,9 @@ function drawYeolpumta(){
     <div class="bottom-space"></div>`;
 }
 
-// — 연락처 —
-function drawContact(){
-  document.getElementById('ct').innerHTML=`
+// ── 연락처 ──
+function drawContact() {
+  document.getElementById('ct').innerHTML = `
     <div class="ccard">
       <div class="crow"><div class="cico ci-g"><i class="ti ti-user-circle" aria-hidden="true"></i></div><div style="flex:1"><div class="cn2">학사담당교사</div><div class="cr2">평일 18:30 – 24:00</div></div><a href="tel:010-4985-2464" class="cbtn"><i class="ti ti-phone" style="font-size:13px" aria-hidden="true"></i> 전화</a></div>
       <div class="crow"><div class="cico ci-b"><i class="ti ti-building" aria-hidden="true"></i></div><div style="flex:1"><div class="cn2">학사 사무실</div><div class="cr2">평일 18:30 – 24:00</div></div><a href="tel:043-251-5878" class="cbtn"><i class="ti ti-phone" style="font-size:13px" aria-hidden="true"></i> 전화</a></div>
@@ -319,10 +371,10 @@ function drawContact(){
     <div class="bottom-space"></div>`;
 }
 
-// — 민원 —
-function drawComplaint(){
-  selCat='';
-  document.getElementById('ct').innerHTML=`
+// ── 민원 ──
+function drawComplaint() {
+  selCat = '';
+  document.getElementById('ct').innerHTML = `
     <div style="background:linear-gradient(135deg,#2d1b4a,#4a2d7a);border-radius:14px;padding:16px;margin-bottom:12px;color:#fff">
       <div style="font-size:15px;font-weight:600;margin-bottom:4px">📮 민원 접수</div>
       <div style="font-size:11px;opacity:0.7;line-height:1.6">작성한 민원은 학사담당교사에게<br>바로 전달됩니다.</div>
@@ -356,31 +408,31 @@ function drawComplaint(){
     <div class="bottom-space"></div>`;
 }
 
-function selectCat(cat){
-  selCat=cat;
-  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.toggle('selected',b.textContent.includes(cat)));
+function selectCat(cat) {
+  selCat = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.toggle('selected', b.textContent.includes(cat)));
 }
 
-async function submitComplaint(){
-  const hakbun=document.getElementById('c-hakbun')?.value.trim();
-  const name=document.getElementById('c-name')?.value.trim();
-  const content=document.getElementById('c-content')?.value.trim();
-  if(!hakbun||!name||!selCat||!content){alert('모든 항목을 입력해 주세요.');return;}
-  const btn=document.getElementById('c-submit');
-  btn.disabled=true;btn.textContent='제출 중...';
-  const now=new Date();
-  const dateStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  try{
-    const res=await fetch(COMPLAINT_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({hakbun,name,category:selCat,content,datetime:dateStr})
+async function submitComplaint() {
+  const hakbun = document.getElementById('c-hakbun')?.value.trim();
+  const name = document.getElementById('c-name')?.value.trim();
+  const content = document.getElementById('c-content')?.value.trim();
+  if (!hakbun||!name||!selCat||!content) { alert('모든 항목을 입력해 주세요.'); return; }
+  const btn = document.getElementById('c-submit');
+  btn.disabled = true; btn.textContent = '제출 중...';
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({type:'complaint', hakbun, name, category:selCat, content, datetime:dateStr})
     });
-    if(!res.ok) throw new Error('서버 오류: '+res.status);
-    document.getElementById('complaint-result').style.display='block';
-    btn.style.display='none';
-  }catch(e){
-    btn.disabled=false;btn.textContent='민원 제출하기';
+    if (!res.ok) throw new Error('서버 오류: '+res.status);
+    document.getElementById('complaint-result').style.display = 'block';
+    btn.style.display = 'none';
+  } catch(e) {
+    btn.disabled = false; btn.textContent = '민원 제출하기';
     alert('제출 중 오류가 발생했습니다. 다시 시도해 주세요.');
   }
 }
