@@ -170,9 +170,14 @@ const EVENTS = {
   // 7월
   '2026-7-1':  [{type:'i', tag:'입소(기말고사)', time:'13:00 ~ 23:00'}],
   '2026-7-2':  [{type:'i', tag:'입소(기말고사)', time:'13:00 ~ 23:00'}],
-  '2026-7-3':  [{type:'i', tag:'입소(기말고사)', time:'13:00 ~ 23:00'}],
+  '2026-7-3':  [{type:'o', tag:'퇴소', time:'13:00 ~ 18:00'}],
+  '2026-7-8':  [{type:'i', tag:'입소(3학년 모의고사)', time:'16:30 ~ (3학년만)'}],
   '2026-7-15': [{type:'h', tag:'학생회 선거', time:''}],
-  '2026-7-16': [{type:'o', tag:'여름방학 시작 (퇴소)', time:'16:00 ~'}],
+  '2026-7-16': [{type:'o', tag:'방학식 (퇴소)', time:'시간 미정'}],
+  '2026-7-19': [{type:'i', tag:'입소(기숙사 개방)', time:'19:00 ~ 23:00'}],
+  '2026-7-24': [{type:'o', tag:'퇴소(기숙사 개방)', time:'16:00 ~ 21:30'}],
+  '2026-7-26': [{type:'i', tag:'입소(기숙사 개방)', time:'19:00 ~ 23:00'}],
+  '2026-7-31': [{type:'o', tag:'퇴소(기숙사 개방)', time:'16:00 ~ 21:30'}],
   // 8월
   '2026-8-11': [{type:'h', tag:'2학기 개학식', time:''}, {type:'i', tag:'입소', time:'19:00 ~ 23:00'}],
   '2026-8-15': [{type:'h', tag:'광복절(토)', time:'입퇴소 없음'}],
@@ -197,8 +202,8 @@ const EVENTS = {
 
 // 방학 기간 (기본 금/일 규칙 적용 안 함)
 const VACATIONS = [
-  { start: new Date(2026,6,16), end: new Date(2026,7,10) },   // 여름방학 7/16~8/10
-  { start: new Date(2026,11,28), end: new Date(2027,1,28) },  // 겨울방학
+  { start: new Date(2026,6,17), end: new Date(2026,7,10) },   // 여름방학 7/17~8/10 (기숙사 개방일은 EVENTS로 별도 표시)
+  { start: new Date(2026,11,29), end: new Date(2027,1,28) },  // 겨울방학
 ];
 
 function isVacation(date) {
@@ -273,6 +278,9 @@ function drawCal() {
       <div class="ctitle">${calM}월 ${calD}일 일정</div>
       ${erows}
     </div>
+    <div style="background:#fff8e6;border:0.5px solid #fde8a0;border-radius:12px;padding:11px 14px;font-size:12px;color:#8a6200;text-align:center;line-height:1.5">
+      ⚠️ 7월부터는 일정에 따라 추후 변경 가능
+    </div>
     <div class="bottom-space"></div>`;
 }
 
@@ -317,8 +325,8 @@ function drawYeolpumta() {
 function drawContact() {
   document.getElementById('ct').innerHTML = `
     <div class="ccard">
-      <div class="crow"><div class="cico ci-g"><i class="ti ti-user-circle"></i></div><div style="flex:1"><div class="cn2">학사담당교사</div><div class="cr2">평일 18:30 – 24:00</div></div><a href="tel:010-4985-2464" class="cbtn"><i class="ti ti-phone" style="font-size:13px"></i> 전화</a></div>
-      <div class="crow"><div class="cico ci-b"><i class="ti ti-building"></i></div><div style="flex:1"><div class="cn2">학사 사무실</div><div class="cr2">평일 18:30 – 24:00</div></div><a href="tel:043-251-5878" class="cbtn"><i class="ti ti-phone" style="font-size:13px"></i> 전화</a></div>
+      <div class="crow"><div class="cico ci-g"><i class="ti ti-user-circle"></i></div><div style="flex:1"><div class="cn2">학사담당교사 (김선화)</div><div class="cr2">방과후 자습, 일정, 입퇴소 관련</div></div><a href="tel:010-4985-2464" class="cbtn"><i class="ti ti-phone" style="font-size:13px"></i> 전화</a></div>
+      <div class="crow"><div class="cico ci-b"><i class="ti ti-building"></i></div><div style="flex:1"><div class="cn2">학사 사무실 (예수정)</div><div class="cr2">평일 18:30 – 24:00</div></div><a href="tel:043-251-5878" class="cbtn"><i class="ti ti-phone" style="font-size:13px"></i> 전화</a></div>
       <div class="crow"><div class="cico ci-a"><i class="ti ti-school"></i></div><div style="flex:1"><div class="cn2">산남고등학교</div><div class="cr2">교무실 메인</div></div><a href="tel:043-251-5878" class="cbtn"><i class="ti ti-phone" style="font-size:13px"></i> 전화</a></div>
       <div class="crow"><div class="cico ci-r"><i class="ti ti-ambulance"></i></div><div style="flex:1"><div class="cn2">긴급 연락처</div><div class="cr2">24시간</div></div><a href="tel:010-4985-2464" class="cbtn"><i class="ti ti-phone" style="font-size:13px"></i> 전화</a></div>
     </div>
