@@ -107,8 +107,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz_a9EHm21_woqtfdgZWvh8rhYD-BB5R26ND5W1zad-8UruwdhlnLIYlBcuUndeZ_JDjA/exec';
-let calY = 2026, calM = 6, calD = 3;
+const _now = new Date();
+let calY = _now.getFullYear() === 2026 ? 2026 : 2026;
+let calM = (_now.getFullYear() === 2026 && _now.getMonth()+1 <= 8) ? _now.getMonth()+1 : 6;
+let calD = (_now.getFullYear() === 2026 && _now.getMonth()+1 <= 8) ? _now.getDate() : 1;
 let selCat = '';
+
+// 달력 표시 가능 범위: 2026년 6월 ~ 8월
+const CAL_MIN = {y:2026, m:6};
+const CAL_MAX = {y:2026, m:8};
 
 function go(i) {
   for (let j = 0; j < 5; j++) document.getElementById('tb'+j).classList.toggle('active', j===i);
@@ -174,30 +181,15 @@ const EVENTS = {
   '2026-7-8':  [{type:'i', tag:'입소(3학년 모의고사)', time:'16:30 ~ (3학년만)'}],
   '2026-7-15': [{type:'h', tag:'학생회 선거', time:''}],
   '2026-7-16': [{type:'o', tag:'방학식 (퇴소)', time:'시간 미정'}],
-  '2026-7-19': [{type:'i', tag:'입소(기숙사 개방)', time:'19:00 ~ 23:00'}],
-  '2026-7-24': [{type:'o', tag:'퇴소(기숙사 개방)', time:'16:00 ~ 21:30'}],
-  '2026-7-26': [{type:'i', tag:'입소(기숙사 개방)', time:'19:00 ~ 23:00'}],
-  '2026-7-31': [{type:'o', tag:'퇴소(기숙사 개방)', time:'16:00 ~ 21:30'}],
+  '2026-7-19': [{type:'i', tag:'입소', time:'19:00 ~ 23:00'}],
+  '2026-7-23': [{type:'h', tag:'생기부 진학 컨설팅', time:''}],
+  '2026-7-24': [{type:'h', tag:'생기부 진학 컨설팅', time:''}, {type:'o', tag:'퇴소', time:'16:00 ~ 21:30'}],
+  '2026-7-26': [{type:'i', tag:'입소', time:'19:00 ~ 23:00'}],
+  '2026-7-31': [{type:'o', tag:'퇴소', time:'16:00 ~ 21:30'}],
   // 8월
-  '2026-8-11': [{type:'h', tag:'2학기 개학식', time:''}, {type:'i', tag:'입소', time:'19:00 ~ 23:00'}],
+  '2026-8-10': [{type:'i', tag:'입소(개학 전날)', time:'19:00 ~ 23:00'}],
+  '2026-8-11': [{type:'h', tag:'2학기 개학식', time:''}],
   '2026-8-15': [{type:'h', tag:'광복절(토)', time:'입퇴소 없음'}],
-  // 9월
-  '2026-9-17': [{type:'i', tag:'입소(중간고사)', time:'13:00 ~ 23:00'}],
-  '2026-9-18': [{type:'i', tag:'입소(중간고사)', time:'13:00 ~ 23:00'}],
-  '2026-9-21': [{type:'i', tag:'입소(중간고사)', time:'13:00 ~ 23:00'}],
-  '2026-9-22': [{type:'i', tag:'입소(중간고사)', time:'13:00 ~ 23:00'}],
-  '2026-9-24': [{type:'h', tag:'추석연휴', time:''}],
-  '2026-9-25': [{type:'h', tag:'추석', time:''}],
-  '2026-9-26': [{type:'h', tag:'추석연휴(토)', time:''}],
-  // 11월
-  '2026-11-19': [{type:'h', tag:'수능', time:''}],
-  // 12월
-  '2026-12-7':  [{type:'i', tag:'입소(기말고사)', time:'13:00 ~ 23:00'}],
-  '2026-12-8':  [{type:'i', tag:'입소(기말고사)', time:'13:00 ~ 23:00'}],
-  '2026-12-9':  [{type:'i', tag:'입소(기말고사)', time:'13:00 ~ 23:00'}],
-  '2026-12-10': [{type:'i', tag:'입소(기말고사)', time:'13:00 ~ 23:00'}],
-  '2026-12-25': [{type:'h', tag:'크리스마스', time:''}],
-  '2026-12-28': [{type:'o', tag:'겨울방학 시작 (퇴소)', time:'16:00 ~'}],
 };
 
 // 방학 기간 (기본 금/일 규칙 적용 안 함)
@@ -260,12 +252,15 @@ function drawCal() {
         </div>`).join('')
     : '<p style="font-size:12px;color:#bbb;padding:4px 0">일정 없음</p>';
 
+  const prevDisabled = (calY === CAL_MIN.y && calM <= CAL_MIN.m);
+  const nextDisabled = (calY === CAL_MAX.y && calM >= CAL_MAX.m);
+
   document.getElementById('ct').innerHTML = `
     <div class="card">
       <div class="chdr">
-        <button class="cnbtn" onclick="chgM(-1)">◀</button>
+        <button class="cnbtn" onclick="chgM(-1)" ${prevDisabled?'style="opacity:0.3;pointer-events:none"':''}>◀</button>
         <h2>${calY}년 ${calM}월</h2>
-        <button class="cnbtn" onclick="chgM(1)">▶</button>
+        <button class="cnbtn" onclick="chgM(1)" ${nextDisabled?'style="opacity:0.3;pointer-events:none"':''}>▶</button>
       </div>
       <div class="cgrid">${cells}</div>
       <div class="legend">
@@ -286,7 +281,11 @@ function drawCal() {
 
 function pickDay(d) { calD = d; drawCal(); }
 function chgM(dir) {
-  calM += dir;
+  const newM = calM + dir;
+  // 범위 체크 (2026년 6~8월만)
+  if (calY === CAL_MAX.y && newM > CAL_MAX.m) return;
+  if (calY === CAL_MIN.y && newM < CAL_MIN.m) return;
+  calM = newM;
   if (calM > 12) { calM = 1; calY++; }
   if (calM < 1)  { calM = 12; calY--; }
   calD = 1;
