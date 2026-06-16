@@ -99,8 +99,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <button class="tab active" id="tb0" onclick="go(0)"><i class="ti ti-speakerphone"></i>공지</button>
   <button class="tab" id="tb1" onclick="go(1)"><i class="ti ti-calendar-event"></i>일정</button>
   <button class="tab" id="tb2" onclick="go(2)"><i class="ti ti-flame"></i>열품타</button>
-  <button class="tab" id="tb3" onclick="go(3)"><i class="ti ti-phone-call"></i>연락</button>
-  <button class="tab" id="tb4" onclick="go(4)"><i class="ti ti-message-report"></i>민원</button>
+  <button class="tab" id="tb3" onclick="go(3)"><i class="ti ti-chart-bar"></i>투표</button>
+  <button class="tab" id="tb4" onclick="go(4)"><i class="ti ti-phone-call"></i>연락</button>
+  <button class="tab" id="tb5" onclick="go(5)"><i class="ti ti-message-report"></i>민원</button>
 </div>
 
 <div class="content" id="ct"></div>
@@ -118,9 +119,9 @@ const CAL_MIN = {y:2026, m:6};
 const CAL_MAX = {y:2026, m:8};
 
 function go(i) {
-  for (let j = 0; j < 5; j++) document.getElementById('tb'+j).classList.toggle('active', j===i);
+  for (let j = 0; j < 6; j++) document.getElementById('tb'+j).classList.toggle('active', j===i);
   document.getElementById('ct').innerHTML = '';
-  [drawNotice, drawCal, drawYeolpumta, drawContact, drawComplaint][i]();
+  [drawNotice, drawCal, drawYeolpumta, drawVote, drawContact, drawComplaint][i]();
   window.scrollTo(0, 0);
 }
 
@@ -136,9 +137,10 @@ async function drawNotice() {
     const items = notices.map(n => `
       <div class="nitem">
         <div class="ndot ${n.pinned ? '' : 'g'}"></div>
-        <div>
+        <div style="flex:1">
           <h4>${n.pinned ? '📌 ' : ''}${n.title}<span class="nbadge ${bc(n.importance)}">${n.importance}</span></h4>
           <p>${n.content}</p>
+          ${n.attach ? `<a href="${n.attach}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;background:#e8f0fe;color:#1a56db;font-size:11px;font-weight:500;padding:5px 10px;border-radius:8px;text-decoration:none">📎 첨부파일 보기</a>` : ''}
         </div>
       </div>`).join('');
     ct.innerHTML = `
@@ -187,7 +189,6 @@ const EVENTS = {
   '2026-7-2':  [{type:'i', tag:'입소(기말고사)', time:'13:00 ~ 23:00'}],
   '2026-7-3':  [{type:'o', tag:'퇴소', time:'13:00 ~ 18:00'}],
   '2026-7-8':  [{type:'i', tag:'입소(3학년 모의고사)', time:'16:30 ~ (3학년만)'}],
-  '2026-7-13': [{type:'h', tag:'자율적 교육과정', time:''}],
   '2026-7-15': [{type:'h', tag:'학생회 선거', time:''}],
   '2026-7-16': [{type:'o', tag:'방학식 (퇴소)', time:'시간 미정'}],
   '2026-7-19': [{type:'i', tag:'입소', time:'19:00 ~ 23:00'}],
@@ -327,6 +328,149 @@ function drawYeolpumta() {
       💡 열품타 앱이 설치되어 있어야 입장할 수 있어요.
     </div>
     <div class="bottom-space"></div>`;
+}
+
+// ════════ 투표 (구글시트 연동) ════════
+let voteSelections = {}; // {voteId: [선택항목들]}
+
+async function drawVote() {
+  const ct = document.getElementById('ct');
+  ct.innerHTML = `<div style="text-align:center;padding:48px 0;color:#bbb;font-size:13px">투표 불러오는 중...</div>`;
+  try {
+    const res = await fetch(SCRIPT_URL + '?type=votes');
+    const votes = await res.json();
+    if (!Array.isArray(votes)) throw new Error();
+
+    if (votes.length === 0) {
+      ct.innerHTML = `
+        <div style="background:#1b2a4a;border-radius:14px;padding:16px;margin-bottom:12px;color:#fff">
+          <div style="font-size:16px;font-weight:600;margin-bottom:4px">🗳️ 투표</div>
+          <div style="font-size:11px;opacity:0.7">진행 중인 투표가 여기에 표시됩니다.</div>
+        </div>
+        <div style="text-align:center;color:#bbb;font-size:13px;padding:30px">현재 진행 중인 투표가 없어요.</div>
+        <div class="bottom-space"></div>`;
+      return;
+    }
+
+    voteSelections = {};
+    const cards = votes.map(v => {
+      voteSelections[v.id] = [];
+      const opts = v.options.map(opt => `
+        <button class="vote-opt" data-vote="${v.id}" data-opt="${opt}" onclick="toggleVote('${v.id}','${opt.replace(/'/g,"\\'")}','${v.method}')"
+          style="display:flex;align-items:center;gap:10px;width:100%;padding:13px 14px;border-radius:10px;border:1.5px solid #e0e0e0;background:#fff;cursor:pointer;font-family:inherit;font-size:13px;color:#1a1a2e;margin-bottom:7px;text-align:left">
+          <span class="vote-check" style="width:20px;height:20px;border-radius:${v.method==='복수'?'5px':'50%'};border:2px solid #ccc;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff"></span>
+          <span>${opt}</span>
+        </button>`).join('');
+      return `
+        <div class="card" data-votecard="${v.id}">
+          <div style="font-size:15px;font-weight:600;color:#1a1a2e;margin-bottom:4px">${v.title}</div>
+          ${v.desc ? `<div style="font-size:12px;color:#888;margin-bottom:6px">${v.desc}</div>` : ''}
+          <div style="font-size:10px;color:#9a8ac0;margin-bottom:12px">${v.method==='복수'?'복수 선택 가능':'하나만 선택'}</div>
+          ${opts}
+        </div>`;
+    }).join('');
+
+    const formInfo = `
+      <div class="card">
+        <div class="ctitle">투표자 정보</div>
+        <div class="frow">
+          <div class="fl"><label>학번</label><input type="number" id="v-hakbun" placeholder="예) 2427"></div>
+          <div class="fl"><label>이름</label><input type="text" id="v-name" placeholder="산남인"></div>
+        </div>
+      </div>`;
+
+    ct.innerHTML = `
+      <div style="background:#1b2a4a;border-radius:14px;padding:16px;margin-bottom:12px;color:#fff">
+        <div style="font-size:16px;font-weight:600;margin-bottom:4px">🗳️ 투표</div>
+        <div style="font-size:11px;opacity:0.7">아래 투표에 참여해 주세요!</div>
+      </div>
+      ${formInfo}
+      ${cards}
+      <div class="success-box" id="vote-result">
+        <div style="font-size:32px;margin-bottom:8px">✅</div>
+        <div style="font-size:14px;font-weight:500;color:#1a7a4a;margin-bottom:4px">투표가 완료되었습니다</div>
+        <div style="font-size:12px;color:#2a9a5a">소중한 의견 감사해요!</div>
+      </div>
+      <button class="sbtn" id="v-submit" onclick="submitVote()">투표 제출하기</button>
+      <div class="bottom-space"></div>`;
+    window._votes = votes;
+  } catch(e) {
+    ct.innerHTML = `
+      <div style="background:#1b2a4a;border-radius:14px;padding:16px;margin-bottom:12px;color:#fff">
+        <div style="font-size:16px;font-weight:600;margin-bottom:4px">🗳️ 투표</div>
+      </div>
+      <div style="background:#fff8e6;border:0.5px solid #fde8a0;border-radius:12px;padding:12px 14px;font-size:12px;color:#8a6200;text-align:center">
+        투표를 불러오지 못했어요. 잠시 후 다시 시도해주세요.
+      </div>
+      <div class="bottom-space"></div>`;
+  }
+}
+
+function toggleVote(voteId, opt, method) {
+  const sel = voteSelections[voteId];
+  const idx = sel.indexOf(opt);
+
+  if (method === '단일') {
+    voteSelections[voteId] = idx >= 0 ? [] : [opt];
+  } else {
+    if (idx >= 0) sel.splice(idx, 1);
+    else sel.push(opt);
+  }
+
+  // UI 업데이트
+  document.querySelectorAll(`.vote-opt[data-vote="${voteId}"]`).forEach(btn => {
+    const o = btn.getAttribute('data-opt');
+    const checked = voteSelections[voteId].includes(o);
+    const check = btn.querySelector('.vote-check');
+    if (checked) {
+      btn.style.borderColor = '#1b2a4a';
+      btn.style.background = '#f0f4fc';
+      check.style.background = '#1b2a4a';
+      check.style.borderColor = '#1b2a4a';
+      check.textContent = '✓';
+    } else {
+      btn.style.borderColor = '#e0e0e0';
+      btn.style.background = '#fff';
+      check.style.background = '#fff';
+      check.style.borderColor = '#ccc';
+      check.textContent = '';
+    }
+  });
+}
+
+async function submitVote() {
+  const hakbun = document.getElementById('v-hakbun')?.value.trim();
+  const name = document.getElementById('v-name')?.value.trim();
+  if (!hakbun || !name) { alert('학번과 이름을 입력해 주세요.'); return; }
+
+  const votes = window._votes || [];
+  const answered = votes.filter(v => voteSelections[v.id] && voteSelections[v.id].length > 0);
+  if (answered.length === 0) { alert('하나 이상의 투표에 참여해 주세요.'); return; }
+
+  const btn = document.getElementById('v-submit');
+  btn.disabled = true; btn.textContent = '제출 중...';
+
+  const now = new Date();
+  const datetime = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  try {
+    for (const v of answered) {
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {'Content-Type': 'text/plain'},
+        body: JSON.stringify({
+          type: 'vote', voteId: v.id, voteTitle: v.title,
+          hakbun, name, selected: voteSelections[v.id], datetime
+        })
+      });
+    }
+    document.getElementById('vote-result').style.display = 'block';
+    btn.style.display = 'none';
+  } catch(e) {
+    btn.disabled = false; btn.textContent = '투표 제출하기';
+    alert('제출 중 오류가 발생했습니다.');
+  }
 }
 
 // ════════ 연락 ════════
