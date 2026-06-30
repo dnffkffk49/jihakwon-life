@@ -72,6 +72,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tally-fill{height:100%;background:#1b2a4a;border-radius:999px}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:11px 18px;border-radius:11px;font-size:13px;z-index:300;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
+.month-head{font-size:13px;font-weight:700;color:#1b2a4a;margin:18px 2px 8px;display:flex;align-items:center;gap:6px}
+.month-head:first-child{margin-top:2px}
+.month-head span{font-size:11px;font-weight:400;color:#bbb}
+.fchips{display:flex;gap:6px;margin-bottom:12px}
+.fchip{padding:6px 13px;border-radius:999px;border:0.5px solid #ddd;background:#fff;font-size:12px;cursor:pointer;color:#888;font-family:inherit}
+.fchip.on{background:#1b2a4a;color:#fff;border-color:#1b2a4a}
+.card.done{opacity:0.62}
 </style>
 </head>
 <body>
@@ -291,27 +298,21 @@ async function drawSchedule(force) {
   if (!cache.schedule || force) {
     ct.innerHTML = `<div class="loading">불러오는 중...</div>`;
     const r = await apiGet('adminSchedule');
-    cache.schedule = ((r && r.rows) || []).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+    cache.schedule = (r && r.rows) || [];
   }
-  const items = cache.schedule.map(s => {
-    const times = [];
-    if (s.inTime) times.push('입소 ' + s.inTime);
-    if (s.outTime) times.push('퇴소 ' + s.outTime);
-    const badge = s.inTime ? '<span class="badge b-on">입소</span>' : s.outTime ? '<span class="badge b-r">퇴소</span>' : '<span class="badge b-g">행사</span>';
-    return `
-      <div class="card">
-        <div class="row-item">
-          <div class="body">
-            <h4>📅 ${esc(s.date)} ${badge}</h4>
-            <p style="color:#444;font-weight:500">${esc(s.title)}</p>
-            <div class="meta">${times.map(t => `<span>🕒 ${esc(t)}</span>`).join('')}${s.note ? `<span>📝 ${esc(s.note)}</span>` : ''}</div>
-          </div>
-          <div class="rowbtns">
-            <button class="iconbtn" onclick='scheduleForm(${s.row})'><i class="ti ti-pencil"></i></button>
-            <button class="iconbtn del" onclick='del("adminScheduleDelete",${s.row},"이 일정을 삭제할까요?")'><i class="ti ti-trash"></i></button>
-          </div>
-        </div>
-      </div>`;
+  // 최신순(내림차순) 정렬 → 월별 그룹 (최근 월이 위로)
+  const sorted = [...cache.schedule].sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
+  const groups = {}, order = [];
+  sorted.forEach(s => {
+    const ym = (s.date || '').slice(0, 7);
+    if (!ym) return;
+    if (!groups[ym]) { groups[ym] = []; order.push(ym); }
+    groups[ym].push(s);
+  });
+  const body = order.map(ym => {
+    const [y, m] = ym.split('-');
+    return `<div class="month-head">🗓️ ${+y}년 ${+m}월 <span>${groups[ym].length}건</span></div>`
+      + groups[ym].map(scheduleCard).join('');
   }).join('');
   ct.innerHTML = `
     <div class="bar">
@@ -322,7 +323,28 @@ async function drawSchedule(force) {
       </div>
     </div>
     <div style="background:#fff8e6;border:0.5px solid #fde8a0;border-radius:12px;padding:10px 13px;font-size:12px;color:#8a6200;margin-bottom:12px;line-height:1.5">💡 매주 <b>금요일 퇴소·일요일 입소·방학</b>은 자동 표시돼요. 여기엔 <b>시험·행사·바뀌는 입퇴소</b>만 등록하세요.</div>
-    ${items || '<div class="empty">등록된 특별일정이 없습니다.</div>'}`;
+    ${body || '<div class="empty">등록된 특별일정이 없습니다.</div>'}`;
+}
+
+function scheduleCard(s) {
+  const times = [];
+  if (s.inTime) times.push('입소 ' + s.inTime);
+  if (s.outTime) times.push('퇴소 ' + s.outTime);
+  const badge = s.inTime ? '<span class="badge b-on">입소</span>' : s.outTime ? '<span class="badge b-r">퇴소</span>' : '<span class="badge b-g">행사</span>';
+  return `
+    <div class="card">
+      <div class="row-item">
+        <div class="body">
+          <h4>📅 ${esc(s.date)} ${badge}</h4>
+          <p style="color:#444;font-weight:500">${esc(s.title)}</p>
+          <div class="meta">${times.map(t => `<span>🕒 ${esc(t)}</span>`).join('')}${s.note ? `<span>📝 ${esc(s.note)}</span>` : ''}</div>
+        </div>
+        <div class="rowbtns">
+          <button class="iconbtn" onclick='scheduleForm(${s.row})'><i class="ti ti-pencil"></i></button>
+          <button class="iconbtn del" onclick='del("adminScheduleDelete",${s.row},"이 일정을 삭제할까요?")'><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+    </div>`;
 }
 
 function scheduleForm(row) {
@@ -466,6 +488,7 @@ async function voteResults(row) {
 
 // ════════ 민원 ════════
 const STATUS = ['접수됨', '처리중', '처리완료'];
+let complaintFilter = '전체';
 function catEmoji(c) { return ({'시설':'🏠','지학원운영':'📋','타학사생':'👥','기타':'💬'})[c] || '📨'; }
 
 async function drawComplaints(force) {
@@ -476,37 +499,63 @@ async function drawComplaints(force) {
     cache.complaints = (r && r.rows) || [];
   }
   updateComplaintBadge();
-  const items = [...cache.complaints].reverse().map(c => `
-    <div class="card">
+  renderComplaints();
+}
+
+function setComplaintFilter(f) { complaintFilter = f; renderComplaints(); }
+
+function renderComplaints() {
+  const all = cache.complaints || [];
+  const pending = all.filter(c => c.status !== '처리완료').length;
+  const done = all.length - pending;
+  let list = all.slice();
+  if (complaintFilter === '미처리') list = list.filter(c => c.status !== '처리완료');
+  else if (complaintFilter === '처리완료') list = list.filter(c => c.status === '처리완료');
+  list.sort((a, b) => a.datetime < b.datetime ? 1 : a.datetime > b.datetime ? -1 : 0); // 최신순
+  const chip = (f, label, n) => `<button class="fchip ${complaintFilter === f ? 'on' : ''}" onclick="setComplaintFilter('${f}')">${label} ${n}</button>`;
+  document.getElementById('ct').innerHTML = `
+    <div class="bar">
+      <h2>민원 (${all.length})</h2>
+      <button class="iconbtn" onclick="drawComplaints(true)" title="새로고침"><i class="ti ti-refresh"></i></button>
+    </div>
+    <div class="fchips">
+      ${chip('전체', '전체', all.length)}
+      ${chip('미처리', '미처리', pending)}
+      ${chip('처리완료', '완료', done)}
+    </div>
+    ${list.map(complaintCard).join('') || '<div class="empty">해당하는 민원이 없습니다.</div>'}`;
+}
+
+function complaintCard(c) {
+  const isDone = c.status === '처리완료';
+  const badge = isDone ? 'b-on' : c.status === '처리중' ? 'b-b' : 'b-g';
+  const sj = JSON.stringify(c.sheet);
+  return `
+    <div class="card${isDone ? ' done' : ''}">
       <div class="row-item">
         <div class="body">
           <h4>${catEmoji(c.category)} ${esc(c.name)} <span style="font-weight:400;color:#aaa;font-size:12px">${esc(c.hakbun)}</span>
-            <span class="badge ${c.status==='처리완료'?'b-on':c.status==='처리중'?'b-b':'b-g'}">${esc(c.status)}</span></h4>
+            <span class="badge ${badge}">${esc(c.status)}</span></h4>
           <p>${esc(c.content)}</p>
-          <div class="meta"><span>🏷️ ${esc(c.category)}</span><span>🕒 ${esc(c.datetime)}</span></div>
+          <div class="meta"><span>🏷️ ${esc(c.category)}</span><span>🕒 ${esc(c.datetime)}</span>${c.completedDate ? `<span>✅ ${esc(c.completedDate)}</span>` : ''}</div>
           <div style="display:flex;gap:8px;margin-top:10px">
-            <select onchange='setStatus(${c.row}, this.value)' style="flex:1;font-size:13px;padding:8px 10px;border-radius:9px;border:0.5px solid #ddd;background:#fafafa;font-family:inherit">
-              ${STATUS.map(s=>`<option ${s===c.status?'selected':''}>${s}</option>`).join('')}
+            <select onchange='setStatus(${c.row}, ${sj}, this.value)' style="flex:1;font-size:13px;padding:8px 10px;border-radius:9px;border:0.5px solid #ddd;background:#fafafa;font-family:inherit">
+              ${STATUS.map(s => `<option ${s === c.status ? 'selected' : ''}>${s}</option>`).join('')}
             </select>
-            <button class="iconbtn del" onclick='del("adminComplaintDelete",${c.row},"이 민원을 삭제할까요?")'><i class="ti ti-trash"></i></button>
+            <button class="iconbtn del" onclick='del("adminComplaintDelete",${c.row},"이 민원을 삭제할까요?",${sj})'><i class="ti ti-trash"></i></button>
           </div>
         </div>
       </div>
-    </div>`).join('');
-  ct.innerHTML = `
-    <div class="bar">
-      <h2>민원 (${cache.complaints.length})</h2>
-      <button class="iconbtn" onclick="drawComplaints(true)" title="새로고침"><i class="ti ti-refresh"></i></button>
-    </div>
-    ${items || '<div class="empty">접수된 민원이 없습니다.</div>'}`;
+    </div>`;
 }
 
-async function setStatus(row, status) {
-  const c = (cache.complaints || []).find(x => x.row === row);
+async function setStatus(row, sheet, status) {
+  const c = (cache.complaints || []).find(x => x.row === row && x.sheet === sheet);
   if (c) c.status = status;           // 로컬 즉시 반영(낙관적)
   updateComplaintBadge();
+  renderComplaints();
   toast('상태를 변경했어요');
-  apiPost({ type: 'adminComplaintStatus', row, status }); // 저장은 배경에서
+  apiPost({ type: 'adminComplaintStatus', row, sheet, status }); // 저장은 배경에서
 }
 
 function updateComplaintBadge() {
@@ -525,9 +574,9 @@ async function refreshComplaintCount() {
 }
 
 // ════════ 공통: 삭제 ════════
-async function del(type, row, msg) {
+async function del(type, row, msg, sheet) {
   if (!confirm(msg)) return;
-  await apiPost({ type, row });
+  await apiPost({ type, row, sheet });
   toast('삭제했어요');
   [drawNotices, drawSchedule, drawVotes, drawComplaints][curTab](true);
 }

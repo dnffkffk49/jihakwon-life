@@ -55,7 +55,7 @@ function doPost(e) {
         case 'adminVoteUpdate':      return voteUpdate_(data);
         case 'adminVoteDelete':      return rowDelete_('🗳️ 투표설정', data.row);
         case 'adminComplaintStatus': return complaintStatus_(data);
-        case 'adminComplaintDelete': return rowDelete_('📬 민원(접수)', data.row);
+        case 'adminComplaintDelete': return rowDelete_(data.sheet || '📬 민원(접수)', data.row);
       }
     }
     return res({ success: false, error: '잘못된 요청' });
@@ -291,27 +291,34 @@ function tallyVotes_(voteId) {
 }
 
 // ════════ 관리자용: 민원 ════════
+// 접수 시트 + 처리완료(보관) 시트 둘 다 읽어서, 완료된 민원도 계속 보이게 함
 function listComplaints_() {
-  const sheet = getSheet('📬 민원(접수)');
-  const values = sheet.getDataRange().getValues();
   const out = [];
-  values.forEach((r, i) => {
-    if (!r[0] && !r[2]) return;                          // 빈 행
-    if (r[0] === '접수일시' || r[1] === '학번' || r[2] === '이름') return; // 헤더 행
-    out.push({
-      row:      i + 1,
-      datetime: r[0] ? (typeof r[0] === 'string' ? r[0] : fmt(r[0])) : '',
-      hakbun:   r[1] || '',
-      name:     r[2] || '',
-      category: r[3] || '',
-      content:  r[4] || '',
-      status:   r[5] || '접수됨'
+  [['📬 민원(접수)', false], ['✅ 민원(처리완료)', true]].forEach(function (pair) {
+    const name = pair[0], isDone = pair[1];
+    const sheet = getSheet(name);
+    if (!sheet) return;
+    const values = sheet.getDataRange().getValues();
+    values.forEach((r, i) => {
+      if (!r[0] && !r[2]) return;                          // 빈 행
+      if (r[0] === '접수일시' || r[1] === '학번' || r[2] === '이름') return; // 헤더 행
+      out.push({
+        row:           i + 1,
+        sheet:         name,                                // 어느 시트의 행인지 (수정/삭제용)
+        datetime:      r[0] ? (typeof r[0] === 'string' ? r[0] : fmt(r[0])) : '',
+        hakbun:        r[1] || '',
+        name:          r[2] || '',
+        category:      r[3] || '',
+        content:       r[4] || '',
+        status:        isDone ? '처리완료' : (r[5] || '접수됨'),
+        completedDate: isDone ? (r[6] ? (typeof r[6] === 'string' ? r[6] : fmt(r[6])) : '') : ''
+      });
     });
   });
   return out;
 }
 function complaintStatus_(d) {
-  getSheet('📬 민원(접수)').getRange(d.row, 6).setValue(d.status || '접수됨');
+  getSheet(d.sheet || '📬 민원(접수)').getRange(d.row, 6).setValue(d.status || '접수됨');
   return res({ ok: true });
 }
 
