@@ -278,10 +278,11 @@ async function saveNotice(row) {
     pinned: document.getElementById('n-pin').checked,
     writeDate: row ? undefined : today()
   };
-  await apiPost(payload);
   closeModal();
+  toast('저장 중…');
+  await apiPost(payload);
+  await drawNotices(true);
   toast(row ? '수정했어요' : '등록했어요');
-  drawNotices(true);
 }
 
 // ════════ 일정 ════════
@@ -347,17 +348,19 @@ async function saveSchedule(row) {
   const title = document.getElementById('s-title').value.trim();
   if (!date) { toast('날짜를 선택해 주세요.'); return; }
   if (!title) { toast('행사명을 입력해 주세요.'); return; }
-  await apiPost({
+  const payload = {
     type: row ? 'adminScheduleUpdate' : 'adminScheduleAdd',
     row: row || undefined,
     date, title,
     inTime: document.getElementById('s-in').value.trim(),
     outTime: document.getElementById('s-out').value.trim(),
     note: document.getElementById('s-note').value.trim()
-  });
+  };
   closeModal();
+  toast('저장 중…');
+  await apiPost(payload);
+  await drawSchedule(true);
   toast(row ? '수정했어요' : '등록했어요');
-  drawSchedule(true);
 }
 
 // ════════ 투표 ════════
@@ -433,10 +436,11 @@ async function saveVote(row, id) {
     options,
     active: document.getElementById('v-active').checked
   };
-  await apiPost(payload);
   closeModal();
+  toast('저장 중…');
+  await apiPost(payload);
+  await drawVotes(true);
   toast(row ? '수정했어요' : '등록했어요');
-  drawVotes(true);
 }
 
 async function voteResults(row) {
