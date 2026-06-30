@@ -117,7 +117,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz_a9EHm21_woqtfdgZW
 
 let PW = sessionStorage.getItem('admin_pw') || '';
 let curTab = 0;
-let cache = { notices: [], schedule: [], votes: [], complaints: [] };
+let cache = { notices: null, schedule: null, votes: null, complaints: null }; // null = 아직 안 불러옴
 
 // ───────── API ─────────
 async function apiGet(type, params = {}) {
@@ -147,8 +147,9 @@ async function doLogin() {
   err.textContent = '확인 중...';
   PW = v;
   try {
-    const r = await apiGet('adminLogin');
+    const r = await apiGet('adminNotices'); // 비번 검증 + 공지 미리 로드 (호출 1번)
     if (r && r.ok) {
+      cache.notices = r.rows || [];
       sessionStorage.setItem('admin_pw', PW);
       showApp();
     } else {
@@ -202,11 +203,13 @@ function impBadge(imp) {
   return `<span class="badge ${c}">${esc(imp||'안내')}</span>`;
 }
 
-async function drawNotices() {
+async function drawNotices(force) {
   const ct = document.getElementById('ct');
-  ct.innerHTML = `<div class="loading">불러오는 중...</div>`;
-  const r = await apiGet('adminNotices');
-  cache.notices = (r && r.rows) || [];
+  if (!cache.notices || force) {
+    ct.innerHTML = `<div class="loading">불러오는 중...</div>`;
+    const r = await apiGet('adminNotices');
+    cache.notices = (r && r.rows) || [];
+  }
   const items = cache.notices.map(n => `
     <div class="card">
       <div class="row-item">
@@ -228,7 +231,10 @@ async function drawNotices() {
   ct.innerHTML = `
     <div class="bar">
       <h2>공지사항 (${cache.notices.length})</h2>
-      <button class="addbtn" onclick="noticeForm()"><i class="ti ti-plus"></i> 새 공지</button>
+      <div style="display:flex;gap:6px">
+        <button class="iconbtn" onclick="drawNotices(true)" title="새로고침"><i class="ti ti-refresh"></i></button>
+        <button class="addbtn" onclick="noticeForm()"><i class="ti ti-plus"></i> 새 공지</button>
+      </div>
     </div>
     ${items || '<div class="empty">등록된 공지가 없습니다.</div>'}`;
 }
@@ -275,15 +281,17 @@ async function saveNotice(row) {
   await apiPost(payload);
   closeModal();
   toast(row ? '수정했어요' : '등록했어요');
-  drawNotices();
+  drawNotices(true);
 }
 
 // ════════ 일정 ════════
-async function drawSchedule() {
+async function drawSchedule(force) {
   const ct = document.getElementById('ct');
-  ct.innerHTML = `<div class="loading">불러오는 중...</div>`;
-  const r = await apiGet('adminSchedule');
-  cache.schedule = ((r && r.rows) || []).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+  if (!cache.schedule || force) {
+    ct.innerHTML = `<div class="loading">불러오는 중...</div>`;
+    const r = await apiGet('adminSchedule');
+    cache.schedule = ((r && r.rows) || []).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+  }
   const items = cache.schedule.map(s => {
     const times = [];
     if (s.inTime) times.push('입소 ' + s.inTime);
@@ -307,7 +315,10 @@ async function drawSchedule() {
   ct.innerHTML = `
     <div class="bar">
       <h2>특별일정 (${cache.schedule.length})</h2>
-      <button class="addbtn" onclick="scheduleForm()"><i class="ti ti-plus"></i> 새 일정</button>
+      <div style="display:flex;gap:6px">
+        <button class="iconbtn" onclick="drawSchedule(true)" title="새로고침"><i class="ti ti-refresh"></i></button>
+        <button class="addbtn" onclick="scheduleForm()"><i class="ti ti-plus"></i> 새 일정</button>
+      </div>
     </div>
     <div style="background:#fff8e6;border:0.5px solid #fde8a0;border-radius:12px;padding:10px 13px;font-size:12px;color:#8a6200;margin-bottom:12px;line-height:1.5">💡 매주 <b>금요일 퇴소·일요일 입소·방학</b>은 자동 표시돼요. 여기엔 <b>시험·행사·바뀌는 입퇴소</b>만 등록하세요.</div>
     ${items || '<div class="empty">등록된 특별일정이 없습니다.</div>'}`;
@@ -346,15 +357,17 @@ async function saveSchedule(row) {
   });
   closeModal();
   toast(row ? '수정했어요' : '등록했어요');
-  drawSchedule();
+  drawSchedule(true);
 }
 
 // ════════ 투표 ════════
-async function drawVotes() {
+async function drawVotes(force) {
   const ct = document.getElementById('ct');
-  ct.innerHTML = `<div class="loading">불러오는 중...</div>`;
-  const r = await apiGet('adminVotes');
-  cache.votes = (r && r.rows) || [];
+  if (!cache.votes || force) {
+    ct.innerHTML = `<div class="loading">불러오는 중...</div>`;
+    const r = await apiGet('adminVotes');
+    cache.votes = (r && r.rows) || [];
+  }
   const items = cache.votes.map(v => `
     <div class="card">
       <div class="row-item">
@@ -376,7 +389,10 @@ async function drawVotes() {
   ct.innerHTML = `
     <div class="bar">
       <h2>투표 (${cache.votes.length})</h2>
-      <button class="addbtn" onclick="voteForm()"><i class="ti ti-plus"></i> 새 투표</button>
+      <div style="display:flex;gap:6px">
+        <button class="iconbtn" onclick="drawVotes(true)" title="새로고침"><i class="ti ti-refresh"></i></button>
+        <button class="addbtn" onclick="voteForm()"><i class="ti ti-plus"></i> 새 투표</button>
+      </div>
     </div>
     ${items || '<div class="empty">등록된 투표가 없습니다.</div>'}`;
 }
@@ -420,7 +436,7 @@ async function saveVote(row, id) {
   await apiPost(payload);
   closeModal();
   toast(row ? '수정했어요' : '등록했어요');
-  drawVotes();
+  drawVotes(true);
 }
 
 async function voteResults(row) {
@@ -448,12 +464,15 @@ async function voteResults(row) {
 const STATUS = ['접수됨', '처리중', '처리완료'];
 function catEmoji(c) { return ({'시설':'🏠','지학원운영':'📋','타학사생':'👥','기타':'💬'})[c] || '📨'; }
 
-async function drawComplaints() {
+async function drawComplaints(force) {
   const ct = document.getElementById('ct');
-  ct.innerHTML = `<div class="loading">불러오는 중...</div>`;
-  const r = await apiGet('adminComplaints');
-  cache.complaints = ((r && r.rows) || []).reverse(); // 최신 먼저
-  const items = cache.complaints.map(c => `
+  if (!cache.complaints || force) {
+    ct.innerHTML = `<div class="loading">불러오는 중...</div>`;
+    const r = await apiGet('adminComplaints');
+    cache.complaints = (r && r.rows) || [];
+  }
+  updateComplaintBadge();
+  const items = [...cache.complaints].reverse().map(c => `
     <div class="card">
       <div class="row-item">
         <div class="body">
@@ -471,23 +490,33 @@ async function drawComplaints() {
       </div>
     </div>`).join('');
   ct.innerHTML = `
-    <div class="bar"><h2>민원 (${cache.complaints.length})</h2></div>
+    <div class="bar">
+      <h2>민원 (${cache.complaints.length})</h2>
+      <button class="iconbtn" onclick="drawComplaints(true)" title="새로고침"><i class="ti ti-refresh"></i></button>
+    </div>
     ${items || '<div class="empty">접수된 민원이 없습니다.</div>'}`;
 }
 
 async function setStatus(row, status) {
-  await apiPost({ type: 'adminComplaintStatus', row, status });
+  const c = (cache.complaints || []).find(x => x.row === row);
+  if (c) c.status = status;           // 로컬 즉시 반영(낙관적)
+  updateComplaintBadge();
   toast('상태를 변경했어요');
-  refreshComplaintCount();
+  apiPost({ type: 'adminComplaintStatus', row, status }); // 저장은 배경에서
+}
+
+function updateComplaintBadge() {
+  const pending = (cache.complaints || []).filter(c => c.status !== '처리완료').length;
+  const el = document.getElementById('cnt-complaint');
+  if (pending > 0) { el.textContent = pending; el.style.display = ''; }
+  else el.style.display = 'none';
 }
 
 async function refreshComplaintCount() {
   try {
     const r = await apiGet('adminComplaints');
-    const pending = ((r && r.rows) || []).filter(c => c.status !== '처리완료').length;
-    const el = document.getElementById('cnt-complaint');
-    if (pending > 0) { el.textContent = pending; el.style.display = ''; }
-    else el.style.display = 'none';
+    cache.complaints = (r && r.rows) || [];
+    updateComplaintBadge();
   } catch (e) {}
 }
 
@@ -496,14 +525,13 @@ async function del(type, row, msg) {
   if (!confirm(msg)) return;
   await apiPost({ type, row });
   toast('삭제했어요');
-  [drawNotices, drawSchedule, drawVotes, drawComplaints][curTab]();
-  if (type === 'adminComplaintDelete') refreshComplaintCount();
+  [drawNotices, drawSchedule, drawVotes, drawComplaints][curTab](true);
 }
 
 // 시작: 저장된 비번 있으면 자동 로그인 시도
 (async function init() {
   if (PW) {
-    try { const r = await apiGet('adminLogin'); if (r && r.ok) { showApp(); return; } } catch (e) {}
+    try { const r = await apiGet('adminNotices'); if (r && r.ok) { cache.notices = r.rows || []; showApp(); return; } } catch (e) {}
     PW = ''; sessionStorage.removeItem('admin_pw');
   }
 })();
