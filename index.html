@@ -83,6 +83,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cat-btn.selected{border-color:#1b2a4a;background:#1b2a4a;color:#fff;font-weight:500}
 .success-box{background:#e8f8f0;border:0.5px solid #a8dfc0;border-radius:12px;padding:16px;text-align:center;display:none;margin-bottom:10px}
 .bottom-space{height:24px}
+.sbox{background:#1b2a4a;border-radius:14px;padding:16px;margin-bottom:12px;color:#fff}
+.sbox.purple{background:linear-gradient(135deg,#2d1b4a,#4a2d7a)}
+.sbox h3{font-size:16px;font-weight:600;margin-bottom:4px}
+.sbox p{font-size:11px;opacity:0.7;line-height:1.6}
+.warnbox{background:#fff8e6;border:0.5px solid #fde8a0;border-radius:12px;padding:12px 14px;font-size:12px;color:#8a6200;text-align:center;line-height:1.5}
+.loading{text-align:center;padding:48px 0;color:#bbb;font-size:13px}
 </style>
 </head>
 <body>
@@ -108,15 +114,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz_a9EHm21_woqtfdgZWvh8rhYD-BB5R26ND5W1zad-8UruwdhlnLIYlBcuUndeZ_JDjA/exec';
-const _now = new Date();
-let calY = _now.getFullYear() === 2026 ? 2026 : 2026;
-let calM = (_now.getFullYear() === 2026 && _now.getMonth()+1 <= 8) ? _now.getMonth()+1 : 6;
-let calD = (_now.getFullYear() === 2026 && _now.getMonth()+1 <= 8) ? _now.getDate() : 1;
-let selCat = '';
-
 // 달력 표시 가능 범위: 2026년 6월 ~ 8월
 const CAL_MIN = {y:2026, m:6};
 const CAL_MAX = {y:2026, m:8};
+
+// 오늘이 표시 범위 안이면 그 달을, 아니면 시작월(6월)을 기본으로
+const _now = new Date();
+const _inRange = _now.getFullYear() === CAL_MIN.y
+  && _now.getMonth()+1 >= CAL_MIN.m && _now.getMonth()+1 <= CAL_MAX.m;
+let calY = CAL_MIN.y;
+let calM = _inRange ? _now.getMonth()+1 : CAL_MIN.m;
+let calD = _inRange ? _now.getDate() : 1;
+let selCat = '';
 
 function go(i) {
   for (let j = 0; j < 6; j++) document.getElementById('tb'+j).classList.toggle('active', j===i);
