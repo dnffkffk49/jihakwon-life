@@ -182,37 +182,35 @@ async function drawNotice() {
   }
 }
 
-// ════════ 일정 (하드코딩) ════════
-// ⚠️ 일정 수정은 여기서!
-// 형식: '연-월-일': [{type:'o'(퇴소)/'i'(입소)/'h'(공휴일·행사), tag:'표시명', time:'시간'}]
-const EVENTS = {
-  // 6월
-  '2026-6-3':  [{type:'h', tag:'지방선거일', time:''}, {type:'i', tag:'입소', time:'19:00 ~ 23:00'}],
-  '2026-6-2':  [{type:'o', tag:'퇴소(선거일 전날)', time:'16:00 ~ 21:30'}],
-  '2026-6-4':  [{type:'i', tag:'입소(모의고사)', time:'16:30 ~ 23:00'}],
-  '2026-6-6':  [{type:'h', tag:'현충일(토)', time:'입퇴소 없음'}],
-  '2026-6-29': [{type:'i', tag:'입소(기말고사)(석식17:30)', time:'13:00 ~ 23:00'}],
-  '2026-6-30': [{type:'i', tag:'입소(기말고사)(석식17:30)', time:'13:00 ~ 23:00'}],
-  // 7월
-  '2026-7-1':  [{type:'i', tag:'입소(기말고사)(석식17:30)', time:'13:00 ~ 23:00'}],
-  '2026-7-2':  [{type:'i', tag:'입소(기말고사)(석식17:30)', time:'13:00 ~ 23:00'}],
-  '2026-7-3':  [{type:'o', tag:'퇴소', time:'13:00 ~ 18:00'}],
-  '2026-7-8':  [{type:'i', tag:'입소(3학년 모의고사)', time:'16:30 ~ (3학년만)'}],
-  '2026-7-9':  [{type:'h', tag:'(1,2학년)교육과정박람회', time:''}],
-  '2026-7-10':  [{type:'h', tag:'(3학년)대입박람회', time:''}],
-  '2026-7-13':  [{type:'h', tag:'(1,2학년)자율적교육과정', time:''}],
-  '2026-7-15': [{type:'h', tag:'학생회 선거', time:''}],
-  '2026-7-16': [{type:'o', tag:'방학식 (퇴소)', time:'10:30 ~'}],
-  '2026-7-19': [{type:'i', tag:'입소', time:'19:00 ~ 23:00'}],
-  '2026-7-23': [{type:'h', tag:'생기부 진학 컨설팅', time:''}],
-  '2026-7-24': [{type:'h', tag:'생기부 진학 컨설팅', time:''}, {type:'o', tag:'퇴소', time:'16:00 ~ 21:30'}],
-  '2026-7-26': [{type:'i', tag:'입소', time:'19:00 ~ 23:00'}],
-  '2026-7-31': [{type:'o', tag:'퇴소', time:'16:00 ~ 21:30'}],
-  // 8월
-  '2026-8-10': [{type:'i', tag:'입소(개학 전날)', time:'19:00 ~ 23:00'}],
-  '2026-8-11': [{type:'h', tag:'2학기 개학식', time:''}],
-  '2026-8-15': [{type:'h', tag:'광복절(토)', time:'입퇴소 없음'}],
-};
+// ════════ 일정 (관리자 페이지 → '📅 일정' 시트에서 불러옴) ════════
+// 특별일정(시험·행사·변경된 입퇴소)은 관리자 페이지에서 등록 → 여기서 자동 표시.
+// 공통 규칙(금 퇴소·일 입소·방학)은 아래 코드에 그대로 둠.
+let EVENTS = {};          // {연-월-일: [{type,tag,time}]} — 시트에서 채워짐
+let schedLoaded = false;
+
+// 시트 한 줄 → 달력 이벤트로 변환 (입소시간 있으면 입소, 퇴소시간 있으면 퇴소, 둘 다 없으면 행사)
+function buildEvents(rows) {
+  const map = {};
+  rows.forEach(r => {
+    if (!r.date) return;
+    const p = String(r.date).split('-').map(Number);
+    const k = `${p[0]}-${p[1]}-${p[2]}`;
+    if (!map[k]) map[k] = [];
+    if (r.inTime)  map[k].push({ type:'i', tag: r.title || '입소', time: r.inTime });
+    if (r.outTime) map[k].push({ type:'o', tag: r.title || '퇴소', time: r.outTime });
+    if (!r.inTime && !r.outTime) map[k].push({ type:'h', tag: r.title || '', time: r.note || '' });
+  });
+  return map;
+}
+
+async function loadSchedule() {
+  try {
+    const res = await fetch(SCRIPT_URL + '?type=schedule');
+    const rows = await res.json();
+    EVENTS = Array.isArray(rows) ? buildEvents(rows) : {};
+  } catch (e) { EVENTS = {}; }
+  schedLoaded = true;
+}
 
 // 방학 기간 (기본 금/일 규칙 적용 안 함)
 const VACATIONS = [
@@ -245,7 +243,11 @@ function getMonthEvts(y, m) {
   return evts;
 }
 
-function drawCal() {
+async function drawCal() {
+  if (!schedLoaded) {
+    document.getElementById('ct').innerHTML = `<div style="text-align:center;padding:48px 0;color:#bbb;font-size:13px">일정 불러오는 중...</div>`;
+    await loadSchedule();
+  }
   const evts = getMonthEvts(calY, calM);
   const firstDow = new Date(calY, calM-1, 1).getDay();
   const dim = new Date(calY, calM, 0).getDate();

@@ -50,7 +50,7 @@ function doPost(e) {
         case 'adminNoticeDelete':    return rowDelete_('📢 공지사항', data.row);
         case 'adminScheduleAdd':     return scheduleAdd_(data);
         case 'adminScheduleUpdate':  return scheduleUpdate_(data);
-        case 'adminScheduleDelete':  return rowDelete_('📅 특별일정', data.row);
+        case 'adminScheduleDelete':  return rowDelete_('📅 일정', data.row);
         case 'adminVoteAdd':         return voteAdd_(data);
         case 'adminVoteUpdate':      return voteUpdate_(data);
         case 'adminVoteDelete':      return rowDelete_('🗳️ 투표설정', data.row);
@@ -108,20 +108,19 @@ function getNotices() {
   return res(notices);
 }
 
-// ── 특별일정 읽기 ──
+// ── 일정 읽기 (📅 일정 시트: 날짜·행사명·입소시간·퇴소시간·비고) ──
 function getSchedule() {
-  const sheet = getSheet('📅 특별일정');
+  const sheet = getSheet('📅 일정');
+  if (!sheet) return res([]);
   const rows = sheet.getDataRange().getValues();
   const schedules = rows.slice(1)
-    .filter(r => r[0] && r[2])
+    .filter(r => r[0] && r[1])
     .map(r => ({
-      date:    r[0] ? fmt(r[0]) : '',
-      type:    r[1] || '',
-      title:   r[2] || '',
-      inTime:  fmtTime(r[3]),
-      outTime: fmtTime(r[4]),
-      endDate: r[5] ? fmt(r[5]) : '',
-      note:    r[6] || ''
+      date:    fmt(r[0]),
+      title:   r[1] || '',
+      inTime:  r[2] || '',
+      outTime: r[3] || '',
+      note:    r[4] || ''
     }));
   return res(schedules);
 }
@@ -218,29 +217,28 @@ function noticeUpdate_(d) {
 
 // ════════ 관리자용: 일정 ════════
 function listSchedule_() {
-  const sheet = getSheet('📅 특별일정');
+  const sheet = getSheet('📅 일정');
+  if (!sheet) return [];
   const values = sheet.getDataRange().getValues();
   return values.slice(1).map((r, i) => ({
     row:     i + 2,
     date:    r[0] ? fmt(r[0]) : '',
-    type:    r[1] || '',
-    title:   r[2] || '',
-    inTime:  fmtTime(r[3]),
-    outTime: fmtTime(r[4]),
-    endDate: r[5] ? fmt(r[5]) : '',
-    note:    r[6] || ''
+    title:   r[1] || '',
+    inTime:  r[2] || '',
+    outTime: r[3] || '',
+    note:    r[4] || ''
   })).filter(s => s.date && s.title);
 }
 
 function scheduleRow_(d) {
-  return [d.date || '', d.type || '', d.title || '', d.inTime || '', d.outTime || '', d.endDate || '', d.note || ''];
+  return [d.date || '', d.title || '', d.inTime || '', d.outTime || '', d.note || ''];
 }
 function scheduleAdd_(d) {
-  getSheet('📅 특별일정').appendRow(scheduleRow_(d));
+  getSheet('📅 일정').appendRow(scheduleRow_(d));
   return res({ ok: true });
 }
 function scheduleUpdate_(d) {
-  getSheet('📅 특별일정').getRange(d.row, 1, 1, 7).setValues([scheduleRow_(d)]);
+  getSheet('📅 일정').getRange(d.row, 1, 1, 5).setValues([scheduleRow_(d)]);
   return res({ ok: true });
 }
 
@@ -340,6 +338,55 @@ function archiveCompleted() {
   toDelete.forEach(r => active.deleteRow(r));
 }
 
+// ════════ 최초 1회: 옛 '📅 특별일정' 삭제 + 새 '📅 일정' 생성 + 기존 일정 이관 ════════
+// ▶ 에디터에서 함수 목록을 'setupSchedule'로 바꾸고 한 번만 ▶실행 하세요.
+function setupSchedule() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 1) 옛 특별일정 시트 삭제
+  const old = ss.getSheetByName('📅 특별일정');
+  if (old) ss.deleteSheet(old);
+
+  // 2) 새 일정 시트 준비 (있으면 비우고 헤더 재설정)
+  let sheet = ss.getSheetByName('📅 일정');
+  if (!sheet) sheet = ss.insertSheet('📅 일정');
+  sheet.clear();
+  sheet.getRange(1, 1, 1, 5).setValues([['날짜', '행사명', '입소시간', '퇴소시간', '비고']]);
+
+  // 3) 기존 코드에 있던 6~8월 일정 이관 (행사명 / 입소시간 / 퇴소시간 / 비고)
+  const seed = [
+    ['2026-06-02', '퇴소(선거일 전날)', '', '16:00 ~ 21:30', ''],
+    ['2026-06-03', '지방선거일', '', '', ''],
+    ['2026-06-03', '입소', '19:00 ~ 23:00', '', ''],
+    ['2026-06-04', '입소(모의고사)', '16:30 ~ 23:00', '', ''],
+    ['2026-06-06', '현충일(토)', '', '', '입퇴소 없음'],
+    ['2026-06-29', '입소(기말고사)(석식17:30)', '13:00 ~ 23:00', '', ''],
+    ['2026-06-30', '입소(기말고사)(석식17:30)', '13:00 ~ 23:00', '', ''],
+    ['2026-07-01', '입소(기말고사)(석식17:30)', '13:00 ~ 23:00', '', ''],
+    ['2026-07-02', '입소(기말고사)(석식17:30)', '13:00 ~ 23:00', '', ''],
+    ['2026-07-03', '퇴소', '', '13:00 ~ 18:00', ''],
+    ['2026-07-08', '입소(3학년 모의고사)', '16:30 ~ (3학년만)', '', ''],
+    ['2026-07-09', '(1,2학년)교육과정박람회', '', '', ''],
+    ['2026-07-10', '(3학년)대입박람회', '', '', ''],
+    ['2026-07-13', '(1,2학년)자율적교육과정', '', '', ''],
+    ['2026-07-15', '학생회 선거', '', '', ''],
+    ['2026-07-16', '방학식 (퇴소)', '', '10:30 ~', ''],
+    ['2026-07-19', '입소', '19:00 ~ 23:00', '', ''],
+    ['2026-07-23', '생기부 진학 컨설팅', '', '', ''],
+    ['2026-07-24', '생기부 진학 컨설팅', '', '', ''],
+    ['2026-07-24', '퇴소', '', '16:00 ~ 21:30', ''],
+    ['2026-07-26', '입소', '19:00 ~ 23:00', '', ''],
+    ['2026-07-31', '퇴소', '', '16:00 ~ 21:30', ''],
+    ['2026-08-10', '입소(개학 전날)', '19:00 ~ 23:00', '', ''],
+    ['2026-08-11', '2학기 개학식', '', '', ''],
+    ['2026-08-15', '광복절(토)', '', '', '입퇴소 없음']
+  ];
+  sheet.getRange(2, 1, seed.length, 5).setValues(seed);
+
+  // 입소/퇴소 시간 칸이 시간으로 자동변환되지 않도록 텍스트 서식 고정
+  sheet.getRange(2, 3, seed.length, 2).setNumberFormat('@');
+}
+
 // ── 트리거 설정 (최초 1회 실행) ──
 function setTrigger() {
   ScriptApp.getProjectTriggers().forEach(t => ScriptApp.deleteTrigger(t));
@@ -352,12 +399,6 @@ function getSheet(name) {
 }
 function fmt(date) {
   return Utilities.formatDate(new Date(date), 'Asia/Seoul', 'yyyy-MM-dd');
-}
-function fmtTime(val) {
-  if (!val) return '';
-  if (typeof val === 'string') return val;
-  try { return Utilities.formatDate(new Date(val), 'Asia/Seoul', 'HH:mm'); }
-  catch (e) { return ''; }
 }
 function res(obj) {
   return ContentService
