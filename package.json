@@ -1,9 +1,0 @@
-{
-  "name": "jihakwon-life",
-  "version": "1.0.0",
-  "private": true,
-  "description": "산남고 지학원 학사생 웹 + 관리자 페이지 (Vercel + Neon)",
-  "dependencies": {
-    "@neondatabase/serverless": "^0.10.4"
-  }
-}
