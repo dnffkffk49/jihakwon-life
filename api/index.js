@@ -6,7 +6,21 @@
 // ════════════════════════════════════════
 
 const { neon } = require('@neondatabase/serverless');
-const sql = neon(process.env.DATABASE_URL || process.env.POSTGRES_URL);
+
+// DB 클라이언트는 지연 초기화 — 환경변수가 없으면 함수가 죽는 대신 명확한 에러를 반환
+let _sql = null;
+function getDbUrl() {
+  return process.env.DATABASE_URL || process.env.POSTGRES_URL
+    || process.env.DATABASE_URL_UNPOOLED || process.env.POSTGRES_PRISMA_URL;
+}
+function sql(strings, ...values) {
+  if (!_sql) {
+    const url = getDbUrl();
+    if (!url) throw new Error('DB 연결값(DATABASE_URL)이 없습니다. Vercel Storage에서 Neon 연결 후 Redeploy 하세요.');
+    _sql = neon(url);
+  }
+  return _sql(strings, ...values);
+}
 
 // ── 공통 ──
 function checkPw(pw) {
