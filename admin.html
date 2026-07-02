@@ -204,7 +204,7 @@ function today() { const d = new Date(); return d.getFullYear()+'-'+String(d.get
 
 // ════════ 공지 ════════
 const IMP_OPTS = ['🔴 긴급', '🔵 일반', '🟢 안내'];
-const CAT_OPTS = ['일반', '생활', '학습', '행사', '기타'];
+const CAT_OPTS = ['일정', '학사', '시설', '규칙', '기타'];
 
 function impBadge(imp) {
   const c = (imp||'').includes('긴급') ? 'b-r' : (imp||'').includes('일반') ? 'b-b' : 'b-g';
