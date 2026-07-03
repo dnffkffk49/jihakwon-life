@@ -215,16 +215,35 @@ async function voteUpdate(x) {
   return { ok: true };
 }
 async function tallyVotes(voteKey) {
-  const rows = voteKey
+  const all = voteKey
     ? await sql`select created_at, hakbun, name, selected from vote_results where vote_key=${voteKey} order by created_at desc, id desc`
     : await sql`select created_at, hakbun, name, selected from vote_results order by created_at desc, id desc`;
+
+  // 같은 학번은 마지막(최신) 투표만 인정 — 최신순 정렬이라 첫 등장만 채택
+  const seen = new Set();
+  const rows = [];
+  let dupExcluded = 0;
+  for (const r of all) {
+    const key = String(r.hakbun || '').trim() || ('n:' + String(r.name || '').trim());
+    if (seen.has(key)) { dupExcluded++; continue; }
+    seen.add(key);
+    rows.push(r);
+  }
+
   const counts = {};
+  const byOption = {};   // 옵션별 선택자 명단
   rows.forEach(r => {
-    String(r.selected || '').split(',').map(s => s.trim()).filter(Boolean).forEach(o => { counts[o] = (counts[o] || 0) + 1; });
+    String(r.selected || '').split(',').map(s => s.trim()).filter(Boolean).forEach(o => {
+      counts[o] = (counts[o] || 0) + 1;
+      (byOption[o] = byOption[o] || []).push({ name: r.name || '', hakbun: r.hakbun || '' });
+    });
   });
+
   return {
     voters: rows.length,
+    dupExcluded,
     counts,
+    byOption,
     rows: rows.map(r => ({
       datetime: fmtDateTime(r.created_at),
       hakbun: r.hakbun || '',
