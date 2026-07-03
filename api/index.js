@@ -117,6 +117,7 @@ async function handlePost(req, res) {
       case 'adminVoteAdd':         return send(res, await voteAdd(data));
       case 'adminVoteUpdate':      return send(res, await voteUpdate(data));
       case 'adminVoteDelete':      return send(res, await rowDelete('votes', data.row));
+      case 'adminVoteResultDelete': return send(res, await rowDelete('vote_results', data.row));
       case 'adminComplaintStatus': return send(res, await complaintStatus(data));
       case 'adminComplaintDelete': return send(res, await rowDelete('complaints', data.row));
     }
@@ -216,23 +217,22 @@ async function voteUpdate(x) {
 }
 async function tallyVotes(voteKey) {
   const all = voteKey
-    ? await sql`select created_at, hakbun, name, selected from vote_results where vote_key=${voteKey} order by created_at desc, id desc`
-    : await sql`select created_at, hakbun, name, selected from vote_results order by created_at desc, id desc`;
+    ? await sql`select id, created_at, hakbun, name, selected from vote_results where vote_key=${voteKey} order by created_at desc, id desc`
+    : await sql`select id, created_at, hakbun, name, selected from vote_results order by created_at desc, id desc`;
 
-  // 같은 학번은 마지막(최신) 투표만 인정 — 최신순 정렬이라 첫 등장만 채택
+  // 같은 학번은 마지막(최신) 투표만 인정 — 최신순 정렬이라 첫 등장만 집계
   const seen = new Set();
-  const rows = [];
   let dupExcluded = 0;
-  for (const r of all) {
+  const recs = all.map(r => {
     const key = String(r.hakbun || '').trim() || ('n:' + String(r.name || '').trim());
-    if (seen.has(key)) { dupExcluded++; continue; }
-    seen.add(key);
-    rows.push(r);
-  }
+    const counted = !seen.has(key);
+    if (counted) seen.add(key); else dupExcluded++;
+    return { r, counted };
+  });
 
   const counts = {};
   const byOption = {};   // 옵션별 선택자 명단
-  rows.forEach(r => {
+  recs.filter(x => x.counted).forEach(({ r }) => {
     String(r.selected || '').split(',').map(s => s.trim()).filter(Boolean).forEach(o => {
       counts[o] = (counts[o] || 0) + 1;
       (byOption[o] = byOption[o] || []).push({ name: r.name || '', hakbun: r.hakbun || '' });
@@ -240,15 +240,17 @@ async function tallyVotes(voteKey) {
   });
 
   return {
-    voters: rows.length,
+    voters: recs.length - dupExcluded,
     dupExcluded,
     counts,
     byOption,
-    rows: rows.map(r => ({
+    rows: recs.map(({ r, counted }) => ({
+      id: r.id,
       datetime: fmtDateTime(r.created_at),
       hakbun: r.hakbun || '',
       name: r.name || '',
-      selected: r.selected || ''
+      selected: r.selected || '',
+      counted
     }))
   };
 }
@@ -289,5 +291,6 @@ async function rowDelete(table, id) {
   else if (table === 'schedule')   await sql`delete from schedule   where id=${id}`;
   else if (table === 'votes')      await sql`delete from votes      where id=${id}`;
   else if (table === 'complaints') await sql`delete from complaints where id=${id}`;
+  else if (table === 'vote_results') await sql`delete from vote_results where id=${id}`;
   return { ok: true };
 }
