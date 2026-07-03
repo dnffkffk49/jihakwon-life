@@ -216,15 +216,22 @@ async function voteUpdate(x) {
 }
 async function tallyVotes(voteKey) {
   const rows = voteKey
-    ? await sql`select selected from vote_results where vote_key=${voteKey}`
-    : await sql`select selected from vote_results`;
+    ? await sql`select created_at, hakbun, name, selected from vote_results where vote_key=${voteKey} order by created_at desc, id desc`
+    : await sql`select created_at, hakbun, name, selected from vote_results order by created_at desc, id desc`;
   const counts = {};
-  let voters = 0;
   rows.forEach(r => {
-    voters++;
     String(r.selected || '').split(',').map(s => s.trim()).filter(Boolean).forEach(o => { counts[o] = (counts[o] || 0) + 1; });
   });
-  return { voters, counts };
+  return {
+    voters: rows.length,
+    counts,
+    rows: rows.map(r => ({
+      datetime: fmtDateTime(r.created_at),
+      hakbun: r.hakbun || '',
+      name: r.name || '',
+      selected: r.selected || ''
+    }))
+  };
 }
 async function saveVote(x) {
   await sql`insert into vote_results (vote_key, vote_title, hakbun, name, selected)
