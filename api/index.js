@@ -68,6 +68,7 @@ async function handleGet(req, res) {
   if (type === 'notices')  return send(res, await getNotices());
   if (type === 'schedule') return send(res, await getSchedule());
   if (type === 'votes')    return send(res, await getVotes());
+  if (type === 'laundry')  return send(res, await getLaundryToday());
 
   // 관리자용 (비밀번호 필요)
   if (type && type.indexOf('admin') === 0) {
@@ -101,8 +102,10 @@ async function handlePost(req, res) {
   const type = data.type;
 
   // 학생용
-  if (type === 'complaint') return send(res, await saveComplaint(data));
-  if (type === 'vote')      return send(res, await saveVote(data));
+  if (type === 'complaint')     return send(res, await saveComplaint(data));
+  if (type === 'vote')          return send(res, await saveVote(data));
+  if (type === 'laundryBook')   return send(res, await saveLaundryBooking(data));
+  if (type === 'laundryCancel') return send(res, await cancelLaundryBooking(data));
 
   // 관리자용
   if (type && type.indexOf('admin') === 0) {
@@ -258,6 +261,54 @@ async function saveVote(x) {
   await sql`insert into vote_results (vote_key, vote_title, hakbun, name, selected)
             values (${x.voteId || ''}, ${x.voteTitle || ''}, ${x.hakbun || ''}, ${x.name || ''},
                     ${Array.isArray(x.selected) ? x.selected.join(', ') : (x.selected || '')})`;
+  return { success: true };
+}
+
+// ════════ 세탁실 예약 (당일만, 18~22시 1시간 단위) ════════
+const LAUNDRY_HOURS = [18, 19, 20, 21, 22];
+const LAUNDRY_FLOORS = { washer: [1, 2, 3, 4], dryer: [1, 2, 3] };
+
+function kstNow() {                                     // 한국시간 기준 오늘 날짜/현재 시각
+  const t = Date.now() + 9 * 3600 * 1000;
+  const dt = new Date(t);
+  return { date: dt.toISOString().slice(0, 10), hour: dt.getUTCHours() };
+}
+
+async function getLaundryToday() {
+  const { date } = kstNow();
+  const rows = await sql`select id, machine_type, floor, hour, name from laundry_bookings
+                          where booking_date = ${date} order by hour`;
+  return rows.map(r => ({ id: r.id, machineType: r.machine_type, floor: r.floor, hour: r.hour, name: r.name || '' }));
+}
+
+async function saveLaundryBooking(x) {
+  const machineType = x.machineType;
+  const floor = parseInt(x.floor, 10);
+  const hour = parseInt(x.hour, 10);
+  const name = String(x.name || '').trim().slice(0, 40);
+  const { date, hour: curHour } = kstNow();
+
+  if (!LAUNDRY_FLOORS[machineType] || !LAUNDRY_FLOORS[machineType].includes(floor))
+    return { success: false, error: '잘못된 기기/층이에요.' };
+  if (!LAUNDRY_HOURS.includes(hour))
+    return { success: false, error: '예약 가능한 시간이 아니에요 (18~22시).' };
+  if (hour < curHour)
+    return { success: false, error: '이미 지난 시간이에요.' };
+  if (!name)
+    return { success: false, error: '이름 또는 호실을 입력해 주세요.' };
+
+  const rows = await sql`
+    insert into laundry_bookings (machine_type, floor, booking_date, hour, name)
+    values (${machineType}, ${floor}, ${date}, ${hour}, ${name})
+    on conflict (machine_type, floor, booking_date, hour) do nothing
+    returning id`;
+  if (!rows.length) return { success: false, error: '이미 다른 사람이 예약한 자리예요.' };
+  return { success: true, id: rows[0].id };
+}
+
+async function cancelLaundryBooking(x) {
+  const id = parseInt(x.id, 10);
+  if (id) await sql`delete from laundry_bookings where id=${id}`;
   return { success: true };
 }
 

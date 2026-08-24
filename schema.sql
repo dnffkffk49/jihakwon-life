@@ -57,6 +57,19 @@ create table if not exists complaints (
   completed_at  timestamptz
 );
 
+create table if not exists laundry_bookings (
+  id            serial primary key,
+  created_at    timestamptz default now(),
+  machine_type  text not null,     -- 'washer' | 'dryer'
+  floor         int not null,
+  booking_date  date not null,     -- 한국시간 기준 예약 날짜 (당일만 사용)
+  hour          int not null,      -- 예약 시작 시각 (18~22)
+  name          text not null      -- 이름 또는 호실
+);
+
+create unique index if not exists laundry_slot_uidx
+  on laundry_bookings (machine_type, floor, booking_date, hour);
+
 -- ── 특별일정 시드 (6~8월) : 이미 있으면 건너뜀 ──
 insert into schedule (date, title, in_time, out_time, note)
 select * from (values
