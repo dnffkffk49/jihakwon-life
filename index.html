@@ -92,8 +92,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sbox p{font-size:11px;opacity:0.7;line-height:1.6}
 .warnbox{background:#fff8e6;border:0.5px solid #fde8a0;border-radius:12px;padding:12px 14px;font-size:12px;color:#8a6200;text-align:center;line-height:1.5}
 .loading{text-align:center;padding:48px 0;color:#bbb;font-size:13px}
+.lcard-washer{border-left:4px solid #3498db}
+.lcard-dryer{border-left:4px solid #f39c12}
 .lhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.lhead h4{font-size:13px;font-weight:600;color:#1a1a2e}
+.lhead h4{display:flex;align-items:center;gap:7px}
+.lmtag{font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;flex-shrink:0}
+.lmtag-washer{background:#e6f1fb;color:#185fa5}
+.lmtag-dryer{background:#fdecd6;color:#b5651d}
+.lfloor{font-size:15px;font-weight:700;color:#1a1a2e}
 .lcount{font-size:11px;color:#999}
 .lslots{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .lslot{border-radius:10px;border:0.5px solid #ddd;background:#fafafa;text-align:center;padding:9px 2px;cursor:pointer}
@@ -442,8 +448,11 @@ function laundrySection(title, machineType, floors, map, curHour) {
       </div>`;
     }).join('');
     return `
-      <div class="card">
-        <div class="lhead"><h4>${title} · ${floor}층</h4><span class="lcount">오늘 예약 ${count}건</span></div>
+      <div class="card lcard-${machineType}">
+        <div class="lhead">
+          <h4><span class="lmtag lmtag-${machineType}">${title}</span><span class="lfloor">${floor}층</span></h4>
+          <span class="lcount">오늘 예약 ${count}건</span>
+        </div>
         <div class="lslots">${slots}</div>
       </div>`;
   }).join('');
@@ -457,11 +466,12 @@ function renderLaundry() {
       <div style="font-size:16px;font-weight:600;margin-bottom:4px">🧺 세탁실 예약</div>
       <div style="font-size:11px;opacity:0.7;line-height:1.7">이용시간 18:00 ~ 23:00 · 1시간 단위<br>빈 칸을 누르면 예약, 예약된 칸을 누르면 취소</div>
     </div>
-    <div class="ctitle">세탁기 · 층별 1대</div>
+    <div class="ctitle" style="color:#185fa5;font-weight:700">🔵 세탁기 · 층별 1대</div>
     ${laundrySection('세탁기', 'washer', WASHER_FLOORS, map, curHour)}
-    <div class="ctitle" style="margin-top:4px">건조기 · 층별 1대 (4층 제외)</div>
+    <div class="ctitle" style="margin-top:4px;color:#b5651d;font-weight:700">🟠 건조기 · 층별 1대 (4층 제외)</div>
     ${laundrySection('건조기', 'dryer', DRYER_FLOORS, map, curHour)}
-    <div style="background:#fff8e6;border:0.5px solid #fde8a0;border-radius:12px;padding:11px 14px;font-size:12px;color:#8a6200;text-align:center;line-height:1.5">
+    <div style="background:#fff8e6;border:0.5px solid #fde8a0;border-radius:12px;padding:11px 14px;font-size:12px;color:#8a6200;text-align:center;line-height:1.6">
+      ⚠️ 본인 층에 있는 세탁기·건조기만 사용 가능해요 (4층 학생은 2·3층 건조기 이용)<br>
       ⚠️ 예약은 당일만 가능하며, 매일 자정에 자동으로 초기화돼요.
     </div>
     <div class="bottom-space"></div>`;
@@ -482,7 +492,7 @@ function laundryTap(machineType, floor, hour) {
     openLaundryModal(`
       <h3>${mname} · ${floor}층 · ${String(hour).padStart(2,'0')}:00 시작</h3>
       <div class="sub">1시간 동안 이용할 수 있어요.</div>
-      <div class="fl"><label>이름 또는 호실</label><input type="text" id="l-name" placeholder="예) 302호 김철수" onkeydown="if(event.key==='Enter')laundryBook('${machineType}',${floor},${hour})"></div>
+      <div class="fl"><label>이름 또는 호실</label><input type="text" id="l-name" placeholder="예) 302호 김산남" onkeydown="if(event.key==='Enter')laundryBook('${machineType}',${floor},${hour})"></div>
       <div class="btns">
         <button class="mbtn-gray" onclick="closeLaundryModal()">취소</button>
         <button class="mbtn-navy" onclick="laundryBook('${machineType}',${floor},${hour})">예약 확정</button>
