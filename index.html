@@ -126,11 +126,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div class="tabs">
   <button class="tab active" id="tb0" onclick="go(0)"><i class="ti ti-speakerphone"></i>공지</button>
   <button class="tab" id="tb1" onclick="go(1)"><i class="ti ti-calendar-event"></i>일정</button>
-  <button class="tab" id="tb2" onclick="go(2)"><i class="ti ti-flame"></i>열품타</button>
-  <button class="tab" id="tb3" onclick="go(3)"><i class="ti ti-wash-machine"></i>세탁실</button>
-  <button class="tab" id="tb4" onclick="go(4)"><i class="ti ti-chart-bar"></i>투표</button>
-  <button class="tab" id="tb5" onclick="go(5)"><i class="ti ti-phone-call"></i>연락</button>
-  <button class="tab" id="tb6" onclick="go(6)"><i class="ti ti-message-report"></i>민원</button>
+  <button class="tab" id="tb2" onclick="go(2)"><i class="ti ti-wash-machine"></i>세탁실</button>
+  <button class="tab" id="tb3" onclick="go(3)"><i class="ti ti-chart-bar"></i>투표</button>
+  <button class="tab" id="tb4" onclick="go(4)"><i class="ti ti-message-report"></i>민원</button>
+  <button class="tab" id="tb5" onclick="go(5)"><i class="ti ti-flame"></i>열품타</button>
+  <button class="tab" id="tb6" onclick="go(6)"><i class="ti ti-phone-call"></i>연락</button>
 </div>
 
 <div class="content" id="ct"></div>
@@ -154,7 +154,7 @@ let selCat = '';
 function go(i) {
   for (let j = 0; j < 7; j++) document.getElementById('tb'+j).classList.toggle('active', j===i);
   document.getElementById('ct').innerHTML = '';
-  [drawNotice, drawCal, drawYeolpumta, drawLaundry, drawVote, drawContact, drawComplaint][i]();
+  [drawNotice, drawCal, drawLaundry, drawVote, drawComplaint, drawYeolpumta, drawContact][i]();
   window.scrollTo(0, 0);
 }
 
