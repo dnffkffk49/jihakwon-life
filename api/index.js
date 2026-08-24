@@ -266,7 +266,7 @@ async function saveVote(x) {
 
 // ════════ 세탁실 예약 (당일만, 18~22시 1시간 단위) ════════
 const LAUNDRY_HOURS = [18, 19, 20, 21, 22];
-const LAUNDRY_FLOORS = { washer: [1, 2, 3, 4], dryer: [1, 2, 3] };
+const LAUNDRY_FLOORS = { washer: [2, 3, 4], dryer: [2, 3] };   // 1층엔 세탁기·건조기 없음, 4층엔 건조기 없음
 
 function kstNow() {                                     // 한국시간 기준 오늘 날짜/현재 시각
   const t = Date.now() + 9 * 3600 * 1000;

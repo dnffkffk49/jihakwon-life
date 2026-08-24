@@ -399,8 +399,8 @@ function drawYeolpumta() {
 }
 
 // ════════ 세탁실 예약 (당일만, 18~22시 1시간 단위) ════════
-const WASHER_FLOORS = [1,2,3,4];
-const DRYER_FLOORS = [1,2,3];
+const WASHER_FLOORS = [2,3,4];   // 1층엔 세탁기 없음
+const DRYER_FLOORS = [2,3];      // 1층·4층엔 건조기 없음
 const LAUNDRY_HOURS = [18,19,20,21,22];
 let laundryRows = [];
 
@@ -466,12 +466,12 @@ function renderLaundry() {
       <div style="font-size:16px;font-weight:600;margin-bottom:4px">🧺 세탁실 예약</div>
       <div style="font-size:11px;opacity:0.7;line-height:1.7">이용시간 18:00 ~ 23:00 · 1시간 단위<br>빈 칸을 누르면 예약, 예약된 칸을 누르면 취소</div>
     </div>
-    <div class="ctitle" style="color:#185fa5;font-weight:700">🔵 세탁기 · 층별 1대</div>
+    <div class="ctitle" style="color:#185fa5;font-weight:700">🔵 세탁기 · 층별 1대 (1층 제외)</div>
     ${laundrySection('세탁기', 'washer', WASHER_FLOORS, map, curHour)}
-    <div class="ctitle" style="margin-top:4px;color:#b5651d;font-weight:700">🟠 건조기 · 층별 1대 (4층 제외)</div>
+    <div class="ctitle" style="margin-top:4px;color:#b5651d;font-weight:700">🟠 건조기 · 층별 1대 (1·4층 제외)</div>
     ${laundrySection('건조기', 'dryer', DRYER_FLOORS, map, curHour)}
     <div style="background:#fff8e6;border:0.5px solid #fde8a0;border-radius:12px;padding:11px 14px;font-size:12px;color:#8a6200;text-align:center;line-height:1.6">
-      ⚠️ 본인 층에 있는 세탁기·건조기만 사용 가능해요 (4층 학생은 2·3층 건조기 이용)<br>
+      ⚠️ 본인 층에 해당하는 세탁기, 건조기를 사용하도록!<br>
       ⚠️ 예약은 당일만 가능하며, 매일 자정에 자동으로 초기화돼요.
     </div>
     <div class="bottom-space"></div>`;
