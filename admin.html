@@ -290,9 +290,9 @@ async function saveDday() {
   if (title && !targetDate) { toast('날짜를 선택해 주세요.'); return; }
   closeModal();
   toast('저장 중…');
-  await apiPost({ type: 'adminDdaySave', title, targetDate });
+  const r = await apiPost({ type: 'adminDdaySave', title, targetDate });
   await drawNotices(true);
-  toast('저장했어요');
+  toast(r && r.ok ? '저장했어요' : '저장 실패: ' + ((r && r.error) || '알 수 없는 오류'));
 }
 
 function noticeForm(row) {
