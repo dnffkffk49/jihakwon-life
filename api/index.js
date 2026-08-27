@@ -69,6 +69,7 @@ async function handleGet(req, res) {
   if (type === 'schedule') return send(res, await getSchedule());
   if (type === 'votes')    return send(res, await getVotes());
   if (type === 'laundry')  return send(res, await getLaundryToday());
+  if (type === 'dday')     return send(res, await getDday());
 
   // 관리자용 (비밀번호 필요)
   if (type && type.indexOf('admin') === 0) {
@@ -79,6 +80,7 @@ async function handleGet(req, res) {
     if (type === 'adminVotes')       return send(res, { ok: true, rows: await listVotes() });
     if (type === 'adminVoteResults') return send(res, { ok: true, tally: await tallyVotes(q.voteId) });
     if (type === 'adminComplaints')  return send(res, { ok: true, rows: await listComplaints() });
+    if (type === 'adminDday')        return send(res, { ok: true, data: await getDday() });
   }
   return send(res, { error: '잘못된 요청입니다.' });
 }
@@ -123,6 +125,7 @@ async function handlePost(req, res) {
       case 'adminVoteResultDelete': return send(res, await rowDelete('vote_results', data.row));
       case 'adminComplaintStatus': return send(res, await complaintStatus(data));
       case 'adminComplaintDelete': return send(res, await rowDelete('complaints', data.row));
+      case 'adminDdaySave':        return send(res, await saveDday(data));
     }
   }
   return send(res, { success: false, error: '잘못된 요청' });
@@ -167,6 +170,24 @@ async function noticeUpdate(x) {
       importance=${x.importance || '🟢 안내'}, start_date=${d(x.startDate)}, end_date=${d(x.endDate)},
       pinned=${x.pinned === true}, attach=${x.attach || ''}
     where id=${x.row}`;
+  return { ok: true };
+}
+
+// ════════ D-day (공지 상단 표시) ════════
+async function getDday() {
+  const rows = await sql`select title, target_date from dday_setting where id = 1`;
+  const r = rows[0];
+  if (!r || !r.title || !r.target_date) return { title: '', targetDate: '', dday: null };
+  const targetDate = fmtDate(r.target_date);
+  const { date } = kstNow();
+  const diff = Math.round((new Date(targetDate + 'T00:00:00+09:00') - new Date(date + 'T00:00:00+09:00')) / 86400000);
+  return { title: r.title, targetDate, dday: diff };
+}
+
+async function saveDday(x) {
+  const title = String(x.title || '').trim().slice(0, 30);
+  const targetDate = x.targetDate ? String(x.targetDate).slice(0, 10) : null;
+  await sql`update dday_setting set title=${title || null}, target_date=${targetDate} where id = 1`;
   return { ok: true };
 }
 

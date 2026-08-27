@@ -169,9 +169,17 @@ async function drawNotice() {
   const ct = document.getElementById('ct');
   ct.innerHTML = `<div style="text-align:center;padding:48px 0;color:#bbb;font-size:13px">불러오는 중...</div>`;
   try {
-    const res = await fetch(SCRIPT_URL + '?type=notices');
-    const notices = await res.json();
+    const [notices, dday] = await Promise.all([
+      fetch(SCRIPT_URL + '?type=notices').then(r => r.json()),
+      fetch(SCRIPT_URL + '?type=dday').then(r => r.json()).catch(() => null)
+    ]);
     if (!Array.isArray(notices)) throw new Error();
+    const ddayLabel = n => n === 0 ? 'D-DAY' : n > 0 ? 'D-' + n : 'D+' + (-n);
+    const ddayHtml = (dday && dday.title && dday.dday !== null) ? `
+      <div style="background:#fff;border-radius:14px;border:0.5px solid #ebebeb;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:13px;font-weight:600;color:#1a1a2e">🎯 ${dday.title}</div>
+        <div style="font-size:20px;font-weight:800;color:#1b2a4a">${ddayLabel(dday.dday)}</div>
+      </div>` : '';
     const bc = imp => imp.includes('긴급') ? 'nb-r' : imp.includes('일반') ? 'nb-b' : 'nb-g';
     const items = notices.map(n => `
       <div class="nitem">
@@ -183,6 +191,7 @@ async function drawNotice() {
         </div>
       </div>`).join('');
     ct.innerHTML = `
+      ${ddayHtml}
       <div class="hero">
         <div class="hero-tag">📢 공지사항</div>
         <h2>지학원 공지사항</h2>

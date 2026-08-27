@@ -70,6 +70,14 @@ create table if not exists laundry_bookings (
 create unique index if not exists laundry_slot_uidx
   on laundry_bookings (machine_type, floor, booking_date, hour);
 
+create table if not exists dday_setting (
+  id           smallint primary key default 1,
+  title        text,
+  target_date  date
+);
+insert into dday_setting (id, title, target_date) values (1, null, null)
+on conflict (id) do nothing;
+
 -- ── 특별일정 시드 (6~8월) : 이미 있으면 건너뜀 ──
 insert into schedule (date, title, in_time, out_time, note)
 select * from (values

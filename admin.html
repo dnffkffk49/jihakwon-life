@@ -127,7 +127,7 @@ const SCRIPT_URL = 'https://jihakwon-life.vercel.app/api';   // Vercel+Neon (구
 
 let PW = sessionStorage.getItem('admin_pw') || '';
 let curTab = 0;
-let cache = { notices: null, schedule: null, votes: null, complaints: null }; // null = 아직 안 불러옴
+let cache = { notices: null, schedule: null, votes: null, complaints: null, dday: null }; // null = 아직 안 불러옴
 
 // ───────── API ─────────
 async function apiGet(type, params = {}) {
@@ -215,11 +215,32 @@ function impBadge(imp) {
 
 async function drawNotices(force) {
   const ct = document.getElementById('ct');
-  if (!cache.notices || force) {
+  // 로그인 시 adminNotices가 이미 선로딩됐을 수 있어 두 캐시를 독립적으로 체크
+  const needNotices = !cache.notices || force;
+  const needDday = !cache.dday || force;
+  if (needNotices || needDday) {
     ct.innerHTML = `<div class="loading">불러오는 중...</div>`;
-    const r = await apiGet('adminNotices');
-    cache.notices = (r && r.rows) || [];
+    const [rNotices, rDday] = await Promise.all([
+      needNotices ? apiGet('adminNotices') : Promise.resolve(null),
+      needDday ? apiGet('adminDday') : Promise.resolve(null)
+    ]);
+    if (needNotices) cache.notices = (rNotices && rNotices.rows) || [];
+    if (needDday) cache.dday = (rDday && rDday.data) || { title: '', targetDate: '', dday: null };
   }
+  const ddayCard = `
+    <div class="card">
+      <div class="row-item">
+        <div class="body">
+          <div class="ctitle" style="margin-bottom:4px">🎯 D-day</div>
+          ${cache.dday.title
+            ? `<div style="font-size:14px;font-weight:600">${esc(cache.dday.title)} · ${esc(cache.dday.targetDate)}</div>`
+            : `<div style="font-size:12px;color:#999">설정된 D-day가 없어요 (학생 화면에 표시 안 됨)</div>`}
+        </div>
+        <div class="rowbtns">
+          <button class="iconbtn" onclick="ddayForm()"><i class="ti ti-pencil"></i></button>
+        </div>
+      </div>
+    </div>`;
   const items = cache.notices.map(n => `
     <div class="card">
       <div class="row-item">
@@ -239,6 +260,7 @@ async function drawNotices(force) {
       </div>
     </div>`).join('');
   ct.innerHTML = `
+    ${ddayCard}
     <div class="bar">
       <h2>공지사항 (${cache.notices.length})</h2>
       <div style="display:flex;gap:6px">
@@ -247,6 +269,30 @@ async function drawNotices(force) {
       </div>
     </div>
     ${items || '<div class="empty">등록된 공지가 없습니다.</div>'}`;
+}
+
+function ddayForm() {
+  const d = cache.dday || {};
+  openModal(`
+    <h3>D-day 설정</h3>
+    <div class="fl"><label>제목</label><input id="dd-title" value="${esc(d.title)}" placeholder="예) 수능"></div>
+    <div class="fl"><label>날짜</label><input type="date" id="dd-date" value="${esc(d.targetDate)}"></div>
+    <p style="font-size:11px;color:#aaa;margin:-4px 0 14px;line-height:1.5">제목을 비우고 저장하면 학생 화면에서 D-day가 숨겨져요.</p>
+    <div class="btns">
+      <button class="gbtn" onclick="closeModal()">취소</button>
+      <button class="sbtn" onclick="saveDday()">저장</button>
+    </div>`);
+}
+
+async function saveDday() {
+  const title = document.getElementById('dd-title').value.trim();
+  const targetDate = document.getElementById('dd-date').value;
+  if (title && !targetDate) { toast('날짜를 선택해 주세요.'); return; }
+  closeModal();
+  toast('저장 중…');
+  await apiPost({ type: 'adminDdaySave', title, targetDate });
+  await drawNotices(true);
+  toast('저장했어요');
 }
 
 function noticeForm(row) {
