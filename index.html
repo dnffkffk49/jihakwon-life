@@ -469,11 +469,15 @@ function laundrySection(title, machineType, floors, map, curHour) {
 
 function renderLaundry() {
   const map = laundryMap();
-  const curHour = new Date(Date.now() + 9*3600*1000).getUTCHours();
+  const kst = new Date(Date.now() + 9*3600*1000);
+  const curHour = kst.getUTCHours();
+  const wdays = ['일','월','화','수','목','금','토'];
+  const todayLabel = `${kst.getUTCMonth()+1}월 ${kst.getUTCDate()}일 (${wdays[kst.getUTCDay()]})`;
   document.getElementById('ct').innerHTML = `
     <div style="background:#1b2a4a;border-radius:14px;padding:16px;margin-bottom:12px;color:#fff">
       <div style="font-size:16px;font-weight:600;margin-bottom:4px">🧺 세탁실 예약</div>
       <div style="font-size:11px;opacity:0.7;line-height:1.7">이용시간 18:00 ~ 23:00 · 1시간 단위<br>빈 칸을 누르면 예약, 예약된 칸을 누르면 취소</div>
+      <div style="display:inline-block;background:rgba(255,255,255,0.18);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;margin-top:10px">📅 오늘 · ${todayLabel}</div>
     </div>
     <div class="ctitle" style="color:#185fa5;font-weight:700">🔵 세탁기 · 층별 1대 (1층 제외)</div>
     ${laundrySection('세탁기', 'washer', WASHER_FLOORS, map, curHour)}
