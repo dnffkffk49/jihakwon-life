@@ -285,14 +285,20 @@ async function saveVote(x) {
   return { success: true };
 }
 
-// ════════ 세탁실 예약 (당일만, 18~22시 1시간 단위) ════════
-const LAUNDRY_HOURS = [18, 19, 20, 21, 22];
+// ════════ 세탁실 예약 (당일만) ════════
+// 세탁기: 18~22시 1시간 단위 / 건조기: 18~24시 1시간30분 단위 (건조 시간이 더 걸려서 넉넉하게)
+// 슬롯 값은 자정(00:00) 기준 '분(分)' — DB의 hour 컬럼(정수)을 그대로 재사용
+const hm = (h, m) => h * 60 + m;
+const LAUNDRY_SLOTS = {
+  washer: [hm(18,0), hm(19,0), hm(20,0), hm(21,0), hm(22,0)],
+  dryer:  [hm(18,0), hm(19,30), hm(21,0), hm(22,30)]
+};
 const LAUNDRY_FLOORS = { washer: [2, 3, 4], dryer: [2, 3] };   // 1층엔 세탁기·건조기 없음, 4층엔 건조기 없음
 
-function kstNow() {                                     // 한국시간 기준 오늘 날짜/현재 시각
+function kstNow() {                                     // 한국시간 기준 오늘 날짜/현재 시각(시·분)
   const t = Date.now() + 9 * 3600 * 1000;
   const dt = new Date(t);
-  return { date: dt.toISOString().slice(0, 10), hour: dt.getUTCHours() };
+  return { date: dt.toISOString().slice(0, 10), hour: dt.getUTCHours(), minutes: dt.getUTCHours() * 60 + dt.getUTCMinutes() };
 }
 
 async function getLaundryToday() {
@@ -307,13 +313,13 @@ async function saveLaundryBooking(x) {
   const floor = parseInt(x.floor, 10);
   const hour = parseInt(x.hour, 10);
   const name = String(x.name || '').trim().slice(0, 40);
-  const { date, hour: curHour } = kstNow();
+  const { date, minutes: curMinutes } = kstNow();
 
   if (!LAUNDRY_FLOORS[machineType] || !LAUNDRY_FLOORS[machineType].includes(floor))
     return { success: false, error: '잘못된 기기/층이에요.' };
-  if (!LAUNDRY_HOURS.includes(hour))
-    return { success: false, error: '예약 가능한 시간이 아니에요 (18~22시).' };
-  if (hour < curHour)
+  if (!LAUNDRY_SLOTS[machineType] || !LAUNDRY_SLOTS[machineType].includes(hour))
+    return { success: false, error: '예약 가능한 시간이 아니에요.' };
+  if (hour < curMinutes)
     return { success: false, error: '이미 지난 시간이에요.' };
   if (!name)
     return { success: false, error: '이름 또는 호실을 입력해 주세요.' };
