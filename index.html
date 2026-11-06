@@ -411,7 +411,7 @@ function drawYeolpumta() {
 // 세탁기: 18~22시 1시간 단위 / 건조기: 18~24시 1시간30분 단위 (건조 시간이 더 걸려서 넉넉하게)
 // 슬롯 값은 자정(00:00) 기준 '분(分)' 단위로 저장 — DB 컬럼(hour, 정수)은 그대로 재사용
 const WASHER_FLOORS = [2,3,4];   // 1층엔 세탁기 없음
-const DRYER_FLOORS = [2,3];      // 1층·4층엔 건조기 없음
+const DRYER_FLOORS = [2,3,4];    // 1층엔 건조기 없음
 const hm = (h, m) => h * 60 + m;
 const WASHER_SLOTS = [hm(18,0), hm(19,0), hm(20,0), hm(21,0), hm(22,0)];
 const DRYER_SLOTS  = [hm(18,0), hm(19,30), hm(21,0), hm(22,30)];
@@ -489,7 +489,7 @@ function renderLaundry() {
     </div>
     <div class="ctitle" style="color:#185fa5;font-weight:700">🔵 세탁기 · 층별 1대 (1층 제외) · 18:00~23:00, 1시간 단위</div>
     ${laundrySection('세탁기', 'washer', WASHER_FLOORS, map, curMinutes)}
-    <div class="ctitle" style="margin-top:4px;color:#b5651d;font-weight:700">🟠 건조기 · 층별 1대 (1·4층 제외) · 18:00~24:00, 1시간30분 단위</div>
+    <div class="ctitle" style="margin-top:4px;color:#b5651d;font-weight:700">🟠 건조기 · 층별 1대 (1층 제외) · 18:00~24:00, 1시간30분 단위</div>
     ${laundrySection('건조기', 'dryer', DRYER_FLOORS, map, curMinutes)}
     <div style="background:#fff8e6;border:0.5px solid #fde8a0;border-radius:12px;padding:11px 14px;font-size:12px;color:#8a6200;text-align:center;line-height:1.6">
       ⚠️ 본인 층에 해당하는 세탁기, 건조기를 사용하도록!<br>

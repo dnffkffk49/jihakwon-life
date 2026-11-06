@@ -293,7 +293,7 @@ const LAUNDRY_SLOTS = {
   washer: [hm(18,0), hm(19,0), hm(20,0), hm(21,0), hm(22,0)],
   dryer:  [hm(18,0), hm(19,30), hm(21,0), hm(22,30)]
 };
-const LAUNDRY_FLOORS = { washer: [2, 3, 4], dryer: [2, 3] };   // 1층엔 세탁기·건조기 없음, 4층엔 건조기 없음
+const LAUNDRY_FLOORS = { washer: [2, 3, 4], dryer: [2, 3, 4] };   // 1층엔 세탁기·건조기 없음
 
 function kstNow() {                                     // 한국시간 기준 오늘 날짜/현재 시각(시·분)
   const t = Date.now() + 9 * 3600 * 1000;
